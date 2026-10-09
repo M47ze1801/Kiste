@@ -1,0 +1,3096 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KISTE – Verschenke & Finde</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  :root{
+    --bio-dark:#1f3a2a; --bio-leaf:#3f7d4e; --bio-green:#5ea86a;
+    --bio-mint:#a8d5b5; --bio-light:#e6f3e9; --bio-cream:#f6fbf6;
+    --bio-sand:#d9c9a3; --bio-accent:#f0a868; --bio-text:#22332a;
+    --bio-muted:#6b7f72; --bio-danger:#c65a4a;
+    --trust-bronze:#b58d5a; --trust-silver:#9aa7b0; --trust-gold:#e0a52a;
+    --vip-gold:#e0a52a; --vip-gold-dark:#8a6420;
+    --mod-blue:#3d5a80; --mod-blue-light:#e0ecf7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Segoe UI','Helvetica Neue',system-ui,sans-serif;
+    background:linear-gradient(160deg,#dfece1 0%,#f6fbf6 100%);
+    min-height:100vh;display:flex;justify-content:center;align-items:center;
+    padding:24px;color:var(--bio-text);overflow:hidden;
+  }
+  .phone{
+    width:390px;max-width:100%;height:min(800px,calc(100vh - 48px));
+    background:var(--bio-cream);border-radius:42px;
+    box-shadow:0 30px 60px rgba(31,58,42,.25),0 0 0 10px #2c3d34,0 0 0 12px #1a261f;
+    overflow:hidden;display:flex;flex-direction:column;position:relative;
+  }
+  @media (max-width:480px){
+    body{padding:0;}
+    .phone{width:100%;height:100vh;border-radius:0;box-shadow:none;}
+  }
+  header{
+    background:linear-gradient(140deg,var(--bio-dark),var(--bio-leaf));
+    color:#fff;padding:22px 22px 22px;position:relative;overflow:hidden;
+    flex:0 0 auto;transition:padding .25s ease;
+  }
+  header.compact{padding:14px 22px 16px;}
+  header.compact .tagline{display:none;}
+  header::after{
+    content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;
+    border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(168,213,181,.4),transparent 70%);
+    pointer-events:none;
+  }
+  .brand{display:flex;align-items:center;gap:12px;position:relative;z-index:1;}
+  .brand .leaf{
+    width:52px;height:52px;border-radius:50%;background:var(--bio-mint);
+    display:flex;align-items:center;justify-content:center;font-size:24px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.35);flex:0 0 auto;
+    overflow:hidden;position:relative;
+  }
+  .brand .leaf img{width:100%;height:100%;object-fit:cover;display:block;}
+  .brand .leaf .fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .brand h1{font-size:24px;letter-spacing:6px;font-weight:800;line-height:1;}
+  .brand small{display:block;font-size:9px;letter-spacing:3px;font-weight:400;color:var(--bio-mint);margin-top:3px;}
+  .tagline{margin-top:14px;font-size:12.5px;color:#d7ecdb;line-height:1.5;max-width:280px;position:relative;z-index:1;}
+
+  .views{flex:1 1 auto;position:relative;overflow:hidden;}
+  .view{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;}
+  .view.active{display:flex;}
+
+  .search{
+    margin:12px 18px 0;background:#fff;border-radius:16px;
+    box-shadow:0 4px 12px rgba(31,58,42,.10);display:flex;align-items:center;
+    padding:11px 16px;gap:10px;flex:0 0 auto;
+  }
+  .search input{border:none;outline:none;flex:1;font-size:14px;color:var(--bio-text);background:transparent;font-family:inherit;}
+  .search input::placeholder{color:var(--bio-muted);}
+  .search .icon{color:var(--bio-leaf);font-size:16px;}
+
+  .chips{display:flex;gap:8px;padding:12px 18px 8px;overflow-x:auto;scrollbar-width:none;flex:0 0 auto;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto;padding:7px 14px;border-radius:999px;background:var(--bio-light);
+    color:var(--bio-leaf);font-size:12px;font-weight:600;border:1px solid transparent;
+    cursor:pointer;white-space:nowrap;transition:all .15s;font-family:inherit;
+  }
+  .chip.active{background:var(--bio-leaf);color:#fff;}
+  .chip:active{transform:scale(.95);}
+
+  .feed{
+    flex:1;overflow-y:auto;padding:4px 18px 120px;scrollbar-width:thin;
+    scrollbar-color:var(--bio-mint) transparent;-webkit-overflow-scrolling:touch;
+  }
+  .feed::-webkit-scrollbar{width:6px;}
+  .feed::-webkit-scrollbar-thumb{background:var(--bio-mint);border-radius:3px;}
+
+  .section-title{
+    font-size:11px;text-transform:uppercase;letter-spacing:2px;
+    color:var(--bio-muted);margin:14px 4px 10px;font-weight:700;
+  }
+  .tip{
+    background:linear-gradient(135deg,var(--bio-light),#d7ead9);
+    border-radius:16px;padding:12px 14px;font-size:12px;color:var(--bio-dark);
+    display:flex;gap:10px;align-items:flex-start;margin:8px 0 6px;
+    border-left:4px solid var(--bio-green);line-height:1.5;
+  }
+  .tip strong{display:block;margin-bottom:2px;}
+
+  .card{
+    background:#fff;border-radius:20px;margin-bottom:14px;overflow:hidden;
+    box-shadow:0 4px 14px rgba(31,58,42,.08);border:1px solid #e3efe6;
+    transition:transform .15s ease;cursor:pointer;animation:fadeUp .3s ease both;
+    position:relative;
+  }
+  .card:active{transform:scale(.98);}
+  .card.pending{border-color:#f0d9a8;}
+  .card.banned{border-color:#e8b0a8;opacity:.7;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  .card-img{
+    height:130px;position:relative;display:flex;align-items:center;justify-content:center;
+    font-size:54px;background-size:cover;background-position:center;background-color:var(--bio-light);
+    overflow:hidden;
+  }
+  .card-img.blurred > *:not(.blur-overlay):not(.badge):not(.time):not(.profile-stamp){
+    filter:blur(14px);opacity:.4;
+  }
+  .card-img .blur-overlay{
+    position:absolute;inset:0;background:rgba(31,58,42,.4);
+    display:flex;align-items:center;justify-content:center;z-index:1;
+    color:#fff;font-size:12px;font-weight:700;text-align:center;padding:0 20px;
+    line-height:1.4;backdrop-filter:blur(14px);
+  }
+
+  .badge{
+    position:absolute;top:10px;left:10px;background:rgba(255,255,255,.94);
+    color:var(--bio-leaf);font-size:11px;font-weight:700;padding:4px 10px;
+    border-radius:999px;letter-spacing:.3px;backdrop-filter:blur(4px);z-index:2;
+  }
+  .badge.pending-badge{background:rgba(240,168,104,.95);color:#fff;}
+  .badge.banned-badge{background:rgba(198,90,74,.95);color:#fff;}
+  .time{
+    position:absolute;top:10px;right:10px;background:rgba(31,58,42,.78);
+    color:#e6f3e9;font-size:11px;padding:4px 10px;border-radius:999px;
+    font-weight:600;backdrop-filter:blur(4px);z-index:2;
+  }
+  .profile-stamp{
+    position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:6px;
+    background:rgba(31,58,42,.78);color:#fff;padding:3px 8px 3px 3px;
+    border-radius:999px;font-size:10px;font-weight:600;backdrop-filter:blur(4px);z-index:2;
+  }
+  .profile-stamp .stamp-avatar{
+    width:20px;height:20px;border-radius:50%;background:var(--bio-mint);
+    color:var(--bio-dark);display:flex;align-items:center;justify-content:center;
+    font-size:9px;font-weight:800;flex:0 0 auto;overflow:hidden;
+  }
+  .profile-stamp .stamp-avatar img{width:100%;height:100%;object-fit:cover;}
+  .profile-stamp .trust-dot{
+    width:8px;height:8px;border-radius:50%;margin-left:2px;
+  }
+
+  .card-body{padding:14px 16px 16px;}
+  .card-body h3{font-size:15px;font-weight:700;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .location{
+    font-size:12px;color:var(--bio-muted);display:flex;align-items:center;gap:5px;
+    margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .location::before{content:"📍";font-size:12px;flex:0 0 auto;}
+
+  .verify-bar{
+    background:#faf6ec;border-radius:10px;padding:8px 10px;margin-bottom:8px;
+    font-size:11px;color:#8a6420;display:flex;align-items:center;gap:8px;
+  }
+  .verify-bar .progress{
+    flex:1;height:5px;background:#e8dcc0;border-radius:3px;overflow:hidden;
+  }
+  .verify-bar .progress-fill{
+    height:100%;background:var(--bio-accent);transition:width .3s;
+  }
+
+  .card-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .giver{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--bio-muted);min-width:0;}
+  .giver span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .avatar{
+    width:26px;height:26px;border-radius:50%;background:var(--bio-mint);
+    color:var(--bio-dark);display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:800;flex:0 0 auto;
+  }
+  .btn-route{
+    background:var(--bio-light);color:var(--bio-leaf);border:none;
+    padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;
+    cursor:pointer;transition:background .15s;font-family:inherit;flex:0 0 auto;
+  }
+  .btn-route:hover{background:var(--bio-mint);}
+
+  .empty{text-align:center;padding:40px 20px;color:var(--bio-muted);font-size:13px;}
+  .empty .emo{font-size:44px;display:block;margin-bottom:10px;opacity:.7;}
+  .empty strong{display:block;color:var(--bio-text);font-size:14px;margin-bottom:6px;}
+
+  #map{width:100%;height:100%;background:var(--bio-light);}
+  .leaflet-container{font-family:inherit;background:#e6f3e9;}
+  .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:0 4px 16px rgba(31,58,42,.2);}
+  .leaflet-popup-content{margin:12px 14px;font-size:12px;min-width:160px;}
+  .popup-title{font-weight:700;font-size:13px;color:var(--bio-text);margin-bottom:3px;}
+  .popup-cat{font-size:11px;color:var(--bio-leaf);margin-bottom:5px;}
+  .popup-loc{font-size:11px;color:var(--bio-muted);}
+  .user-marker{
+    background:var(--bio-green);border:3px solid #fff;border-radius:50%;
+    box-shadow:0 2px 8px rgba(31,58,42,.4);position:relative;
+  }
+  .user-marker::after{
+    content:"";position:absolute;inset:-8px;border-radius:50%;
+    border:2px solid var(--bio-green);opacity:.6;animation:pulse 2s ease-out infinite;
+  }
+  @keyframes pulse{0%{transform:scale(.8);opacity:.7;}100%{transform:scale(1.6);opacity:0;}}
+
+  .form-wrap{flex:1;overflow-y:auto;padding:16px 18px 110px;-webkit-overflow-scrolling:touch;}
+  .photo-input{
+    width:100%;height:180px;border-radius:20px;border:2px dashed var(--bio-mint);
+    background:var(--bio-light);display:flex;flex-direction:column;align-items:center;
+    justify-content:center;cursor:pointer;overflow:hidden;position:relative;
+    transition:border-color .2s;margin-bottom:16px;
+  }
+  .photo-input:active{border-color:var(--bio-leaf);}
+  .photo-input .placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--bio-leaf);font-size:13px;font-weight:600;}
+  .photo-input .placeholder .big{font-size:36px;}
+  .photo-input img{width:100%;height:100%;object-fit:cover;display:none;}
+  .photo-input .change-hint{
+    position:absolute;bottom:10px;right:10px;background:rgba(31,58,42,.75);
+    color:#fff;padding:4px 10px;border-radius:999px;font-size:11px;
+    font-weight:600;display:none;
+  }
+  .photo-input.has-photo .change-hint{display:block;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--bio-leaf);margin-bottom:6px;letter-spacing:.3px;}
+  .field input[type=text],.field textarea,.field select,.field input[type=email],.field input[type=password]{
+    width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid #e3efe6;
+    background:#fff;font-size:14px;font-family:inherit;color:var(--bio-text);
+    outline:none;transition:border-color .15s;resize:none;
+  }
+  .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--bio-green);}
+  .field textarea{min-height:72px;}
+
+  .cat-picker{display:flex;flex-wrap:wrap;gap:8px;}
+  .cat-opt{
+    padding:8px 14px;border-radius:999px;background:var(--bio-light);
+    color:var(--bio-leaf);font-size:12.5px;font-weight:600;
+    border:1.5px solid transparent;cursor:pointer;transition:all .15s;font-family:inherit;
+  }
+  .cat-opt.selected{background:var(--bio-leaf);color:#fff;border-color:var(--bio-leaf);}
+
+  .loc-row{display:flex;gap:8px;}
+  .loc-row input{flex:1;}
+  .loc-btn{
+    background:var(--bio-light);color:var(--bio-leaf);border:none;
+    border-radius:14px;padding:0 16px;font-size:16px;cursor:pointer;
+    font-family:inherit;transition:background .15s;
+  }
+  .loc-btn:active{background:var(--bio-mint);}
+  .loc-btn.loading{opacity:.6;pointer-events:none;}
+
+  .duration{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .dur-opt{
+    padding:10px 4px;border-radius:12px;background:var(--bio-light);
+    color:var(--bio-leaf);font-size:12px;font-weight:700;text-align:center;
+    cursor:pointer;border:1.5px solid transparent;transition:all .15s;font-family:inherit;
+  }
+  .dur-opt.selected{background:var(--bio-leaf);color:#fff;}
+
+  .btn-primary{
+    width:100%;padding:16px;border-radius:16px;
+    background:linear-gradient(140deg,var(--bio-green),var(--bio-leaf));
+    color:#fff;border:none;font-size:15px;font-weight:800;letter-spacing:.5px;
+    cursor:pointer;box-shadow:0 8px 20px rgba(63,125,78,.35);
+    transition:transform .15s,box-shadow .15s;font-family:inherit;margin-top:6px;
+  }
+  .btn-primary:active{transform:scale(.98);}
+  .btn-primary:disabled{opacity:.5;pointer-events:none;box-shadow:none;}
+
+  .profile-card{
+    background:linear-gradient(140deg,var(--bio-dark),var(--bio-leaf));
+    border-radius:22px;padding:20px;color:#fff;display:flex;align-items:center;
+    gap:16px;margin-bottom:16px;position:relative;overflow:hidden;
+  }
+  .profile-card::after{
+    content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;
+    border-radius:50%;background:radial-gradient(circle,rgba(168,213,181,.35),transparent 70%);
+  }
+  .profile-avatar{
+    width:64px;height:64px;border-radius:50%;background:var(--bio-mint);
+    color:var(--bio-dark);display:flex;align-items:center;justify-content:center;
+    font-size:22px;font-weight:800;flex:0 0 auto;
+    box-shadow:inset 0 0 0 4px rgba(255,255,255,.35);position:relative;z-index:1;
+    overflow:hidden;
+  }
+  .profile-avatar img{width:100%;height:100%;object-fit:cover;}
+  .profile-info{position:relative;z-index:1;min-width:0;}
+  .profile-info h2{font-size:18px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .profile-info p{font-size:12px;color:var(--bio-mint);}
+
+  .trust-badge{
+    display:inline-flex;align-items:center;gap:4px;
+    padding:3px 10px;border-radius:999px;font-size:10px;font-weight:800;
+    letter-spacing:.3px;margin-top:6px;
+  }
+  .trust-badge.bronze{background:rgba(181,141,90,.25);color:#e8c99b;}
+  .trust-badge.silver{background:rgba(154,167,176,.28);color:#d9e2e8;}
+  .trust-badge.gold{background:rgba(224,165,42,.28);color:#ffd96e;}
+
+  .ban-banner{
+    background:linear-gradient(135deg,#fbeae7,#f5c7c1);
+    border-radius:14px;padding:14px 16px;margin-bottom:14px;
+    border-left:4px solid var(--bio-danger);color:#8a2a1e;
+    font-size:12.5px;line-height:1.5;
+  }
+  .ban-banner strong{display:block;margin-bottom:4px;font-size:13px;}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .stat{background:#fff;border-radius:18px;padding:16px;border:1px solid #e3efe6;text-align:center;}
+  .stat .num{font-size:26px;font-weight:800;color:var(--bio-leaf);line-height:1;margin-bottom:4px;}
+  .stat .lbl{font-size:11px;color:var(--bio-muted);font-weight:600;letter-spacing:.3px;}
+
+  .points-card{
+    background:linear-gradient(135deg,#fff7e6,#ffe8b8);
+    border-radius:18px;padding:16px;margin-bottom:16px;
+    display:flex;align-items:center;gap:14px;
+    border:1px solid #f0d9a8;
+  }
+  .points-card .p-num{
+    font-size:32px;font-weight:800;color:#8a6420;line-height:1;
+  }
+  .points-card .p-label{font-size:12px;color:#8a6420;font-weight:600;margin-top:2px;}
+  .points-card .p-icon{font-size:36px;}
+  .points-card .p-info{flex:1;min-width:0;}
+  .points-card .p-next{
+    font-size:10px;color:#a07a30;margin-top:4px;
+  }
+
+  .menu{background:#fff;border-radius:18px;border:1px solid #e3efe6;overflow:hidden;margin-bottom:14px;}
+  .menu-item{
+    display:flex;align-items:center;gap:12px;padding:14px 16px;font-size:14px;
+    cursor:pointer;border-bottom:1px solid #eef5f0;transition:background .15s;
+  }
+  .menu-item:last-child{border-bottom:none;}
+  .menu-item:active{background:var(--bio-light);}
+  .menu-item .mi{font-size:18px;}
+  .menu-item .arrow{margin-left:auto;color:var(--bio-muted);font-size:14px;}
+
+  .fab{
+    position:absolute;bottom:86px;right:22px;width:62px;height:62px;border-radius:50%;
+    background:linear-gradient(140deg,var(--bio-green),var(--bio-leaf));
+    color:#fff;border:none;font-size:26px;display:flex;align-items:center;
+    justify-content:center;cursor:pointer;box-shadow:0 10px 22px rgba(63,125,78,.45);
+    transition:transform .15s,opacity .2s;z-index:8;font-family:inherit;
+  }
+  .fab:active{transform:scale(.94);}
+  .fab.hidden{opacity:0;pointer-events:none;}
+
+  nav{
+    position:absolute;bottom:0;left:0;right:0;height:74px;background:#ffffff;
+    border-top:1px solid #e3efe6;display:flex;justify-content:space-around;
+    align-items:center;padding:0 4px 8px;box-shadow:0 -4px 14px rgba(31,58,42,.05);z-index:7;
+  }
+  .nav-item{
+    display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;
+    color:var(--bio-muted);font-weight:600;cursor:pointer;padding:6px 8px;
+    border-radius:10px;transition:color .15s;flex:1;max-width:70px;
+  }
+  .nav-item .ico{font-size:18px;line-height:1;}
+  .nav-item.active{color:var(--bio-leaf);}
+  .nav-item.active .ico{filter:drop-shadow(0 2px 4px rgba(94,168,106,.5));transform:translateY(-1px);}
+
+  .modal{
+    position:absolute;inset:0;background:rgba(15,26,20,.55);z-index:20;
+    display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px);
+  }
+  .modal.open{display:flex;}
+  .modal-sheet{
+    background:var(--bio-cream);width:100%;max-height:88%;
+    border-radius:26px 26px 0 0;overflow-y:auto;
+    animation:slideUp .28s cubic-bezier(.22,1,.36,1);position:relative;
+  }
+  @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .modal-close{
+    position:sticky;top:12px;margin-left:auto;margin-right:14px;
+    background:rgba(255,255,255,.92);border:none;width:36px;height:36px;
+    border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;
+    justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);z-index:2;
+    font-family:inherit;color:var(--bio-text);
+  }
+  .modal-photo{
+    height:220px;margin-top:-48px;background-size:cover;background-position:center;
+    background-color:var(--bio-light);display:flex;align-items:center;justify-content:center;
+    font-size:80px;position:relative;overflow:hidden;
+  }
+  .modal-photo.blurred > *:not(.blur-overlay){
+    filter:blur(20px);transform:scale(1.15);
+  }
+  .modal-photo .blur-overlay{
+    position:absolute;inset:0;z-index:2;color:#fff;text-align:center;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    font-size:13px;font-weight:700;line-height:1.5;
+    background:rgba(31,58,42,.55);backdrop-filter:blur(20px);
+    padding:0 30px;
+  }
+  .modal-body{padding:18px 22px 26px;}
+  .modal-body h2{font-size:20px;font-weight:800;margin-bottom:6px;}
+  .modal-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .meta-pill{font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;background:var(--bio-light);color:var(--bio-leaf);}
+  .meta-pill.warn{background:#fdf0e0;color:#a06820;}
+  .meta-pill.danger{background:#fbeae7;color:var(--bio-danger);}
+  .modal-body p.desc{font-size:14px;line-height:1.55;color:var(--bio-text);margin-bottom:16px;}
+  .modal-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #e3efe6;font-size:13px;color:var(--bio-muted);}
+  .modal-row strong{color:var(--bio-text);font-weight:700;}
+  .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .modal-actions.single{grid-template-columns:1fr;}
+  .btn-secondary{
+    padding:14px;border-radius:14px;background:var(--bio-light);color:var(--bio-leaf);
+    border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  }
+  .btn-danger{
+    padding:14px;border-radius:14px;background:#fbeae7;color:var(--bio-danger);
+    border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;
+  }
+  .btn-confirm{
+    padding:16px;border-radius:14px;
+    background:linear-gradient(140deg,var(--bio-green),var(--bio-leaf));
+    color:#fff;border:none;font-size:14px;font-weight:800;
+    cursor:pointer;font-family:inherit;width:100%;margin-top:12px;
+    box-shadow:0 6px 16px rgba(63,125,78,.3);
+  }
+  .btn-confirm:disabled{opacity:.5;pointer-events:none;box-shadow:none;}
+  .btn-negative{
+    padding:14px;border-radius:14px;
+    background:#fff;color:var(--bio-danger);border:1.5px solid #f5c7c1;
+    font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+    width:100%;margin-top:8px;
+  }
+  .btn-negative:disabled{opacity:.5;pointer-events:none;}
+  .btn-mod{
+    padding:14px;border-radius:14px;
+    background:var(--mod-blue-light);color:var(--mod-blue);
+    border:1.5px solid var(--mod-blue);font-size:13px;font-weight:800;
+    cursor:pointer;font-family:inherit;width:100%;margin-top:8px;
+    letter-spacing:.3px;
+  }
+
+  .toast{
+    position:absolute;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--bio-dark);color:#e6f3e9;padding:12px 20px;border-radius:14px;
+    font-size:13px;font-weight:600;box-shadow:0 8px 20px rgba(0,0,0,.25);
+    opacity:0;pointer-events:none;transition:all .3s;z-index:30;max-width:88%;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.error{background:var(--bio-danger);}
+
+  .verify-list{
+    margin-top:14px;padding-top:12px;border-top:1px solid #e3efe6;
+  }
+  .verify-item{
+    display:flex;align-items:center;gap:10px;padding:10px 0;
+    border-bottom:1px solid #eef5f0;font-size:12px;
+  }
+  .verify-item:last-child{border-bottom:none;}
+  .verify-item .v-avatar{
+    width:28px;height:28px;border-radius:50%;background:var(--bio-mint);
+    color:var(--bio-dark);display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:800;flex:0 0 auto;overflow:hidden;
+  }
+  .verify-item .v-avatar img{width:100%;height:100%;object-fit:cover;}
+  .verify-item .v-info{flex:1;min-width:0;}
+  .verify-item .v-name{font-weight:700;color:var(--bio-text);font-size:12px;}
+  .verify-item .v-time{font-size:10px;color:var(--bio-muted);}
+  .verify-item .v-check{color:var(--bio-green);font-size:16px;font-weight:800;}
+  .verify-item .v-x{color:var(--bio-danger);font-size:16px;font-weight:800;}
+
+  .trust-progress{
+    height:6px;background:#e8dcc0;border-radius:3px;overflow:hidden;
+    margin-top:6px;
+  }
+  .trust-progress-fill{
+    height:100%;background:linear-gradient(90deg,var(--bio-green),var(--trust-gold));
+    transition:width .4s;
+  }
+
+  .legal-content{padding:16px 20px 110px;font-size:13px;line-height:1.65;color:var(--bio-text);}
+  .legal-content h2{font-size:18px;margin:4px 0 12px;color:var(--bio-dark);}
+  .legal-content h3{font-size:14px;margin:16px 0 6px;color:var(--bio-leaf);}
+  .legal-content p{margin-bottom:8px;}
+  .legal-content ul{padding-left:20px;margin-bottom:8px;}
+  .legal-content li{margin-bottom:4px;}
+
+  .auth-overlay{
+    position:absolute;inset:0;background:var(--bio-cream);z-index:100;
+    display:none;flex-direction:column;justify-content:flex-start;
+    padding:32px 24px;overflow-y:auto;
+  }
+  .auth-overlay.show{display:flex;}
+  .auth-overlay .brand{margin-bottom:24px;}
+  .auth-overlay h2{font-size:22px;font-weight:800;color:var(--bio-dark);margin-bottom:8px;}
+  .auth-overlay > p{font-size:13px;color:var(--bio-muted);margin-bottom:22px;line-height:1.5;}
+  .auth-toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--bio-muted);cursor:pointer;}
+  .auth-toggle span{color:var(--bio-leaf);font-weight:700;}
+  .auth-legal{margin-top:22px;font-size:11px;color:var(--bio-muted);text-align:center;line-height:1.6;}
+  .auth-legal a{color:var(--bio-leaf);font-weight:700;text-decoration:none;cursor:pointer;}
+
+  .info-box{
+    background:linear-gradient(135deg,#e8f3ea,#d7ead9);
+    border-radius:14px;padding:12px 14px;margin-bottom:14px;
+    font-size:12px;color:var(--bio-dark);line-height:1.55;
+    border-left:4px solid var(--bio-green);
+  }
+  .info-box strong{display:block;margin-bottom:3px;}
+  .info-box.warn{background:linear-gradient(135deg,#fdf0e0,#f5d7a8);border-left-color:var(--bio-accent);color:#8a5a20;}
+  .info-box.danger{background:linear-gradient(135deg,#fbeae7,#f5c7c1);border-left-color:var(--bio-danger);color:#8a2a1e;}
+  .info-box.mod{background:linear-gradient(135deg,var(--mod-blue-light),#c9dcef);border-left-color:var(--mod-blue);color:var(--mod-blue);}
+
+  /* ===== Rangliste ===== */
+  .rank-row{
+    display:flex;align-items:center;gap:12px;padding:12px 14px;
+    background:#fff;border:1px solid #e3efe6;border-radius:14px;
+    margin-bottom:8px;
+  }
+  .rank-row.me{border-color:var(--trust-gold);background:#fffcf2;}
+  .rank-row.vip{border-color:var(--trust-gold);}
+  .rank-pos{
+    width:28px;text-align:center;font-weight:800;color:var(--bio-muted);
+    font-size:14px;flex:0 0 auto;
+  }
+  .rank-pos.top1{color:#e0a52a;font-size:20px;}
+  .rank-pos.top2{color:#9aa7b0;font-size:18px;}
+  .rank-pos.top3{color:#b58d5a;font-size:16px;}
+  .rank-avatar{
+    width:34px;height:34px;border-radius:50%;background:var(--bio-mint);
+    color:var(--bio-dark);display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:800;flex:0 0 auto;overflow:hidden;
+    border:2px solid transparent;
+  }
+  .rank-row.vip .rank-avatar{border-color:var(--trust-gold);}
+  .rank-avatar img{width:100%;height:100%;object-fit:cover;}
+  .rank-info{flex:1;min-width:0;}
+  .rank-name{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rank-sub{font-size:11px;color:var(--bio-muted);margin-top:2px;}
+  .rank-points{
+    font-weight:800;color:var(--bio-leaf);font-size:14px;flex:0 0 auto;
+  }
+  .vip-badge{
+    display:inline-flex;align-items:center;gap:3px;
+    background:linear-gradient(135deg,#ffd96e,#e0a52a);
+    color:#5a3e00;font-size:9px;font-weight:900;
+    padding:2px 7px;border-radius:999px;letter-spacing:.5px;
+    margin-left:4px;vertical-align:middle;
+  }
+  .mod-badge{
+    display:inline-flex;align-items:center;gap:3px;
+    background:linear-gradient(135deg,#a8c4e0,#3d5a80);
+    color:#fff;font-size:9px;font-weight:900;
+    padding:2px 7px;border-radius:999px;letter-spacing:.5px;
+    margin-left:4px;vertical-align:middle;
+  }
+  .vip-code-box{
+    background:linear-gradient(135deg,#fff7e6,#ffe8b8);
+    border:2px dashed var(--trust-gold);border-radius:14px;
+    padding:14px;margin:12px 0;text-align:center;
+  }
+  .vip-code-box .label{
+    font-size:11px;color:#8a6420;font-weight:700;letter-spacing:1px;
+    text-transform:uppercase;margin-bottom:6px;
+  }
+  .vip-code-box .code{
+    font-family:'Courier New',monospace;font-size:18px;font-weight:800;
+    color:#5a3e00;letter-spacing:1.5px;user-select:all;
+  }
+  .vip-code-box .expires{
+    font-size:10px;color:#a07a30;margin-top:6px;
+  }
+  .vip-code-box button{
+    margin-top:10px;background:var(--bio-dark);color:#fff;border:none;
+    padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;
+    cursor:pointer;font-family:inherit;
+  }
+
+  /* ===== Moderator ===== */
+  .mod-header{
+    background:linear-gradient(140deg,var(--mod-blue),#5a7ba6);
+    border-radius:18px;padding:18px;color:#fff;margin-bottom:16px;
+    position:relative;overflow:hidden;
+  }
+  .mod-header::after{
+    content:"";position:absolute;right:-30px;top:-30px;width:100px;height:100px;
+    border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%);
+  }
+  .mod-header h3{font-size:16px;margin-bottom:6px;font-weight:800;position:relative;z-index:1;}
+  .mod-header p{font-size:12px;color:#d9e8f5;line-height:1.5;position:relative;z-index:1;}
+  .mod-stat-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;
+  }
+  .mod-stat{
+    background:#fff;border:1px solid #d9e8f5;border-radius:14px;
+    padding:12px;text-align:center;
+  }
+  .mod-stat .n{
+    font-size:22px;font-weight:800;color:var(--mod-blue);line-height:1;
+    margin-bottom:4px;
+  }
+  .mod-stat .l{font-size:10px;color:var(--bio-muted);font-weight:600;}
+  .escalation-card{
+    background:#fff;border:1px solid #e3efe6;border-radius:16px;
+    padding:14px;margin-bottom:10px;
+    border-left:4px solid var(--bio-danger);
+  }
+  .escalation-card.reviewed{border-left-color:var(--bio-green);opacity:.6;}
+  .escalation-card h4{font-size:14px;margin-bottom:4px;font-weight:700;}
+  .escalation-card .meta{font-size:11px;color:var(--bio-muted);margin-bottom:8px;}
+  .escalation-card .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+  .escalation-card .actions button{
+    padding:10px;border-radius:10px;border:none;font-size:12px;font-weight:700;
+    cursor:pointer;font-family:inherit;
+  }
+  .escalation-card .actions .approve{background:var(--bio-light);color:var(--bio-leaf);}
+  .escalation-card .actions .reject{background:#fbeae7;color:var(--bio-danger);}
+
+  .flagged-user-row{
+    background:#fff;border:1px solid #f0d9a8;border-left:4px solid var(--bio-accent);
+    border-radius:12px;padding:12px 14px;margin-bottom:8px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .flagged-user-row .u-avatar{
+    width:32px;height:32px;border-radius:50%;background:var(--bio-mint);
+    color:var(--bio-dark);display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;flex:0 0 auto;overflow:hidden;
+  }
+  .flagged-user-row .u-info{flex:1;min-width:0;}
+  .flagged-user-row .u-name{font-weight:700;font-size:13px;}
+  .flagged-user-row .u-reason{font-size:11px;color:var(--bio-muted);margin-top:2px;}
+  .flagged-user-row button{
+    background:#fbeae7;color:var(--bio-danger);border:none;
+    padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;
+    cursor:pointer;font-family:inherit;flex:0 0 auto;
+  }
+
+  .mod-tabs{
+    display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;
+  }
+  .mod-tabs::-webkit-scrollbar{display:none;}
+  .mod-tab{
+    flex:0 0 auto;padding:8px 14px;border-radius:999px;background:#fff;
+    border:1px solid #d9e8f5;color:var(--mod-blue);font-size:12px;font-weight:700;
+    cursor:pointer;white-space:nowrap;font-family:inherit;
+  }
+  .mod-tab.active{background:var(--mod-blue);color:#fff;border-color:var(--mod-blue);}
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+
+  <div class="auth-overlay" id="authOverlay">
+    <div class="brand">
+      <div class="leaf" id="authLogoSlot">
+        <img id="authLogoImg" alt="" style="display:none;">
+        <div class="fallback" id="authLogoFallback">🌱</div>
+      </div>
+      <div>
+        <h1>KISTE</h1>
+        <small>TEILEN · TAUSCHEN · FINDEN</small>
+      </div>
+    </div>
+    <h2 id="authTitle">Willkommen zurück</h2>
+    <p id="authSubtitle">Melde dich an, um Kisten zu teilen und zu finden.</p>
+
+    <div class="field">
+      <label>E-Mail</label>
+      <input type="email" id="authEmail" placeholder="deine@email.de" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Passwort</label>
+      <input type="password" id="authPassword" placeholder="Mindestens 6 Zeichen">
+    </div>
+    <div class="field" id="authConfirmField" style="display:none;">
+      <label>Passwort bestätigen</label>
+      <input type="password" id="authConfirm" placeholder="Passwort wiederholen">
+    </div>
+
+    <button class="btn-primary" id="authSubmit">Anmelden</button>
+    <div class="auth-toggle" id="authToggle">Noch kein Konto? <span>Registrieren</span></div>
+
+    <div class="auth-legal">
+      Mit der Anmeldung akzeptierst du unsere<br>
+      <a onclick="showLegal('agb')">AGB</a> und
+      <a onclick="showLegal('datenschutz')">Datenschutzerklärung</a>.
+    </div>
+  </div>
+
+  <header id="appHeader">
+    <div class="brand">
+      <div class="leaf" id="logoSlot">
+        <img id="logoImg" alt="KISTE Logo" style="display:none;">
+        <div class="fallback" id="logoFallback">🌱</div>
+      </div>
+      <div>
+        <h1>KISTE</h1>
+        <small>TEILEN · TAUSCHEN · FINDEN</small>
+      </div>
+    </div>
+    <p class="tagline">Verschenke, was du nicht mehr brauchst – finde Schätze in deiner Nachbarschaft.</p>
+  </header>
+
+  <div class="views">
+
+    <section class="view active" id="view-feed">
+      <div class="search">
+        <span class="icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Suche nach Gegenständen oder Orten…">
+      </div>
+      <div class="chips" id="chipBar"></div>
+      <div class="feed" id="feedList"></div>
+    </section>
+
+    <section class="view" id="view-map">
+      <div id="map"></div>
+    </section>
+
+    <section class="view" id="view-share">
+      <div class="form-wrap">
+        <div id="banWarning"></div>
+        <div class="info-box">
+          <strong>🔍 Community-Kontrolle mit GPS</strong>
+          Neue Fotos werden verwaschen hochgeladen. Erst wenn 3 Nutzer vor Ort die Kiste bestätigen, wird sie sichtbar.
+        </div>
+
+        <div class="photo-input" id="photoInput">
+          <div class="placeholder" id="photoPlaceholder">
+            <div class="big">📷</div>
+            <span>Foto der Kiste machen</span>
+          </div>
+          <img id="photoPreview" alt="Vorschau">
+          <div class="change-hint">Foto ändern</div>
+        </div>
+        <input type="file" id="photoFile" accept="image/*" capture="environment" hidden>
+
+        <div class="field">
+          <label>Titel</label>
+          <input type="text" id="fTitle" placeholder="z. B. Gemüsekiste – frische Ernte" maxlength="60">
+        </div>
+
+        <div class="field">
+          <label>Kategorie</label>
+          <div class="cat-picker" id="catPicker"></div>
+        </div>
+
+        <div class="field">
+          <label>Beschreibung (optional)</label>
+          <textarea id="fDesc" placeholder="Was ist drin? Für wen ist es geeignet?" maxlength="200"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Standort</label>
+          <div class="loc-row">
+            <input type="text" id="fAddr" placeholder="Straße, Hof, Vorgarten…" maxlength="80">
+            <button class="loc-btn" id="btnLocate" title="Aktuellen Standort verwenden">📍</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Sichtbar für</label>
+          <div class="duration" id="durPicker">
+            <div class="dur-opt" data-h="6">6 Std.</div>
+            <div class="dur-opt selected" data-h="24">24 Std.</div>
+            <div class="dur-opt" data-h="72">3 Tage</div>
+            <div class="dur-opt" data-h="168">7 Tage</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btnSubmit">Kiste teilen 🌱</button>
+      </div>
+    </section>
+
+    <section class="view" id="view-mine">
+      <div class="feed" id="mineList" style="padding-top:14px;"></div>
+    </section>
+
+    <section class="view" id="view-ranking">
+      <div class="feed" style="padding-top:14px;">
+        <div class="info-box">
+          <strong>🏆 Top 10 % werden VIP & Moderator</strong>
+          Die aktivsten Nutzer deiner Stadt erhalten jeden Monat einen Gratis-Abo-Code und Moderator-Rechte.
+        </div>
+        <div id="rankingContent"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-moderator">
+      <div class="feed" style="padding-top:14px;">
+        <div id="moderatorContent"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-profile">
+      <div class="feed" style="padding-top:14px;">
+        <div id="banBannerProfile"></div>
+
+        <div class="profile-card">
+          <div class="profile-avatar" id="profAvatar">DU</div>
+          <div class="profile-info">
+            <h2 id="profName">Du</h2>
+            <p id="profEmail">–</p>
+            <div id="profTrustBadge"></div>
+          </div>
+        </div>
+
+        <div class="points-card">
+          <div class="p-icon">⭐</div>
+          <div class="p-info">
+            <div class="p-num" id="pointsNum">0</div>
+            <div class="p-label">Vertrauenspunkte</div>
+            <div class="trust-progress">
+              <div class="trust-progress-fill" id="trustProgress" style="width:0%"></div>
+            </div>
+            <div class="p-next" id="pointsNext">Noch 50 Punkte bis „Vertrauenswürdig"</div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="num" id="statShared">0</div>
+            <div class="lbl">Geteilt</div>
+          </div>
+          <div class="stat">
+            <div class="num" id="statConfirmations">0</div>
+            <div class="lbl">Punkte (Monat)</div>
+          </div>
+        </div>
+
+        <div class="section-title">Einstellungen</div>
+        <div class="menu">
+          <div class="menu-item" id="menuName">
+            <span class="mi">👤</span> Namen ändern <span class="arrow">›</span>
+          </div>
+          <div class="menu-item" id="menuLogo">
+            <span class="mi">🖼️</span> Logo ändern <span class="arrow">›</span>
+          </div>
+          <div class="menu-item" id="menuCity">
+            <span class="mi">🏙️</span> <span style="flex:1;">Stadt ändern</span>
+            <span id="cityShort" style="font-size:11px;color:var(--bio-muted);"></span>
+            <span class="arrow">›</span>
+          </div>
+          <div class="menu-item" id="menuHomeAddress">
+            <span class="mi">🏠</span> <span style="flex:1;">Eigene Adresse</span>
+            <span id="homeAddressShort" style="font-size:11px;color:var(--bio-muted);"></span>
+            <span class="arrow">›</span>
+          </div>
+          <div class="menu-item" id="menuTrustInfo">
+            <span class="mi">🏆</span> Vertrauensstufen <span class="arrow">›</span>
+          </div>
+        </div>
+
+        <div class="section-title">Rechtliches</div>
+        <div class="menu">
+          <div class="menu-item" onclick="showLegal('impressum')">
+            <span class="mi">📄</span> Impressum <span class="arrow">›</span>
+          </div>
+          <div class="menu-item" onclick="showLegal('datenschutz')">
+            <span class="mi">🔒</span> Datenschutz <span class="arrow">›</span>
+          </div>
+          <div class="menu-item" onclick="showLegal('agb')">
+            <span class="mi">📋</span> AGB <span class="arrow">›</span>
+          </div>
+          <div class="menu-item" onclick="showLegal('widerruf')">
+            <span class="mi">↩️</span> Widerrufsbelehrung <span class="arrow">›</span>
+          </div>
+        </div>
+
+        <div class="menu">
+          <div class="menu-item" id="menuClear">
+            <span class="mi">🗑️</span> Alle eigenen Kisten löschen <span class="arrow">›</span>
+          </div>
+          <div class="menu-item" id="menuLogout">
+            <span class="mi">🚪</span> Abmelden <span class="arrow">›</span>
+          </div>
+        </div>
+
+        <div class="tip" style="margin-top:6px;">
+          <span>💚</span>
+          <div>
+            <strong>Danke, dass du teilst!</strong>
+            Jede geteilte Kiste spart Ressourcen und Freude.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-legal">
+      <div class="legal-content" id="legalContent"></div>
+    </section>
+
+  </div>
+
+  <button class="fab" id="fab" title="Kiste teilen">📷</button>
+  <input type="file" id="logoFile" accept="image/*" hidden>
+
+  <div class="modal" id="modal">
+    <div class="modal-sheet" id="modalSheet"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <nav id="bottomNav">
+    <div class="nav-item" data-view="map"><span class="ico">🗺️</span><span>Karte</span></div>
+    <div class="nav-item active" data-view="feed"><span class="ico">🔍</span><span>Entdecken</span></div>
+    <div class="nav-item" data-view="share"><span class="ico">➕</span><span>Teilen</span></div>
+    <div class="nav-item" data-view="mine"><span class="ico">🌿</span><span>Meine</span></div>
+    <div class="nav-item" data-view="ranking"><span class="ico">🏆</span><span>Rang</span></div>
+    <div class="nav-item" data-view="profile"><span class="ico">👤</span><span>Profil</span></div>
+  </nav>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* =====================================================
+   KISTE – Vollversion mit VIP & Moderator-System
+   ===================================================== */
+
+const CATEGORIES = {
+  food:    { label:'Lebensmittel', emoji:'🍎', color:'#e07a5f', bg:'#fbe6df' },
+  books:   { label:'Bücher',       emoji:'📚', color:'#6a8caf', bg:'#e4ecf4' },
+  toys:    { label:'Spielzeug',    emoji:'🧸', color:'#f0a868', bg:'#fdf0e0' },
+  plants:  { label:'Pflanzen',     emoji:'🪴', color:'#5ea86a', bg:'#e0efe3' },
+  clothes: { label:'Kleidung',     emoji:'👕', color:'#b58db6', bg:'#f0e6f1' },
+  other:   { label:'Sonstiges',    emoji:'📦', color:'#8ba888', bg:'#e8efe8' },
+};
+
+const DEFAULT_LOC = { lat: 52.5200, lng: 13.4050 };
+
+// ===== Limits & Schwellen =====
+const MAX_ITEMS = 5;
+const VERIFICATIONS_NEEDED = 3;
+const NEGATIVE_REPORTS_FOR_BAN = 3;
+const NEGATIVE_REPORT_WINDOW_MS = 60 * 60 * 1000;
+const BAN_DURATION_MS = 24 * 60 * 60 * 1000;
+const GPS_CONFIRM_RADIUS_M = 200;
+const GPS_HOME_RADIUS_M = 100;
+const POINTS_CONFIRM = 5;
+const POINTS_ACTIVATOR_BONUS = 10;
+const POINTS_POST_VERIFIED = 5;
+const POINTS_FALSE_REPORT = -20;
+const POINTS_NEGATIVE_CONFIRM = 3;
+
+const TRUST_LEVELS = [
+  { min: 0,   name:'Neuling',         emoji:'🌱', badge:'bronze', color:'#b58d5a' },
+  { min: 50,  name:'Vertrauenswürdig',emoji:'✓',  badge:'silver', color:'#9aa7b0' },
+  { min: 150, name:'Erfahren',        emoji:'⭐', badge:'gold',   color:'#e0a52a' },
+  { min: 400, name:'Botschafter',     emoji:'🏆', badge:'gold',   color:'#e0a52a' },
+];
+
+/* ===== Moderatoren / VIP System ===== */
+const VIP_TOP_PERCENT = 0.10;
+const VIP_MIN_ACTIVITY_POINTS = 30;
+const VIP_MAX_PER_CITY = 50;
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+
+const CITY_SIZES = {
+  'freiburg':   { name:'Freiburg im Breisgau', size:230000 },
+  'stuttgart':  { name:'Stuttgart',            size:635000 },
+  'karlsruhe':  { name:'Karlsruhe',            size:308000 },
+  'mannheim':   { name:'Mannheim',             size:311000 },
+  'heidelberg': { name:'Heidelberg',           size:160000 },
+  'heilbronn':  { name:'Heilbronn',            size:126000 },
+  'pforzheim':  { name:'Pforzheim',            size:125000 },
+  'ulm':        { name:'Ulm',                  size:126000 },
+  'default':    { name:'Deine Stadt',          size:50000 },
+};
+
+const DEMO_CITY_NAMES = [
+  'Lena M.','Felix W.','Sara K.','Jonas B.','Marie L.','Tim R.','Nina H.',
+  'Paul S.','Emma T.','Luca F.','Mia G.','Ben D.','Lea P.','Max V.','Ida N.',
+  'Finn J.','Klara Z.','Elias O.','Lina C.','Noah A.','Hanna Q.','Emil Y.',
+  'Romy E.','Theo I.','Alina U.','Moritz X.','Ella R.','Jule K.','Leon B.',
+];
+
+const REPORT_REASONS = [
+  'Anstößiger oder illegaler Inhalt',
+  'Gefälschtes oder irreführendes Foto',
+  'Persönlichkeitsrechtsverletzung',
+  'Spam oder Werbung',
+  'Sonstiger Verstoß',
+];
+
+const state = {
+  items: [],
+  reports: [],
+  user: null,
+  view: 'feed',
+  filter: 'all',
+  search: '',
+  draft: { photo: null, category: 'other', duration: 24 },
+  isRegistering: false,
+  lastGPS: null,
+  modTab: 'escalations',
+};
+
+/* ===== Storage ===== */
+const LS_USERS   = 'kiste.users.v6';
+const LS_SESSION = 'kiste.session.v6';
+const LS_ITEMS   = 'kiste.items.v6';
+const LS_REPORTS = 'kiste.reports.v6';
+const LS_ESCALATIONS = 'kiste.escalations.v6';
+const LS_FLAGGED = 'kiste.flagged.v6';
+const LS_LAST_VIP_CALC = 'kiste.vipCalc.v1';
+
+function lsGet(k, def){ try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : def; }catch(e){ return def; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+function saveAll(){
+  lsSet(LS_ITEMS, state.items);
+  lsSet(LS_REPORTS, state.reports);
+}
+
+/* ===== Helpers ===== */
+function makeInitials(name){
+  if(!name) return 'DU';
+  const parts = name.trim().split(/\s+/).slice(0,2);
+  return parts.map(p => p[0] ? p[0].toUpperCase() : '').join('') || 'DU';
+}
+function uid(){ return 'i_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function timeAgo(ts){
+  const s = Math.floor((Date.now()-ts)/1000);
+  if(s < 60) return 'gerade eben';
+  const m = Math.floor(s/60);
+  if(m < 60) return `vor ${m} Min.`;
+  const h = Math.floor(m/60);
+  if(h < 24) return `vor ${h} Std.`;
+  const d = Math.floor(h/24);
+  return `vor ${d} ${d===1?'Tag':'Tagen'}`;
+}
+function expiresIn(ts){
+  const s = Math.floor((ts-Date.now())/1000);
+  if(s <= 0) return 'abgelaufen';
+  const h = Math.floor(s/3600);
+  if(h < 1) return `noch ${Math.floor(s/60)} Min.`;
+  if(h < 24) return `noch ${h} Std.`;
+  const d = Math.floor(h/24);
+  return `noch ${d} ${d===1?'Tag':'Tagen'}`;
+}
+function isExpired(item){ return item.expiresAt && item.expiresAt < Date.now(); }
+
+function getTrustLevel(points){
+  let level = TRUST_LEVELS[0];
+  for(const l of TRUST_LEVELS){ if(points >= l.min) level = l; }
+  return level;
+}
+function getNextLevel(points){
+  for(const l of TRUST_LEVELS){ if(points < l.min) return l; }
+  return null;
+}
+
+/* ===== GPS ===== */
+function distanceMeters(lat1, lng1, lat2, lng2){
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function getCurrentPosition(){
+  return new Promise((resolve, reject) => {
+    if(!navigator.geolocation){ reject(new Error('Geolocation nicht verfügbar')); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+      err => reject(err),
+      { enableHighAccuracy:true, timeout:8000, maximumAge:30000 }
+    );
+  });
+}
+
+function getEffectivePosition(){
+  return getCurrentPosition().catch(() => {
+    const jitter = () => (Math.random() - 0.5) * 0.002;
+    return {
+      lat: (state.user?.homeLat || DEFAULT_LOC.lat) + jitter(),
+      lng: (state.user?.homeLng || DEFAULT_LOC.lng) + jitter(),
+      accuracy: 100, fallback: true,
+    };
+  });
+}
+
+/* ===== Ban ===== */
+function isUserBanned(user){
+  if(!user) return false;
+  return user.bannedUntil && user.bannedUntil > Date.now();
+}
+function getBanRemainingMs(user){
+  if(!isUserBanned(user)) return 0;
+  return user.bannedUntil - Date.now();
+}
+function formatBanRemaining(ms){
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if(h > 0) return `${h} Std. ${m} Min.`;
+  return `${m} Min.`;
+}
+
+/* ===== Monat / Aktivitäts-Log ===== */
+function getMonthStart(offsetMonths = 0){
+  const d = new Date();
+  d.setMonth(d.getMonth() + offsetMonths);
+  d.setDate(1);
+  d.setHours(0,0,0,0);
+  return d.getTime();
+}
+function getNextMonthStart(){ return getMonthStart(1); }
+
+function logActivity(user, type, points){
+  if(!user) return;
+  user.activityLog = user.activityLog || [];
+  user.activityLog.push({
+    type, points,
+    city: user.cityKey || 'default',
+    ts: Date.now(),
+  });
+  const cutoff = Date.now() - 2 * MONTH_MS;
+  user.activityLog = user.activityLog.filter(a => a.ts > cutoff);
+}
+
+function getMonthlyPoints(user, monthOffset = 0){
+  if(!user || !user.activityLog) return 0;
+  const start = getMonthStart(monthOffset);
+  const end = getMonthStart(monthOffset + 1);
+  return user.activityLog
+    .filter(a => a.ts >= start && a.ts < end)
+    .reduce((s, a) => s + a.points, 0);
+}
+
+function addPointsAndLog(amount, type){
+  if(!state.user) return;
+  const users = getUsers();
+  const u = users[state.user.email];
+  if(!u) return;
+  u.points = (u.points || 0) + amount;
+  logActivity(u, type, amount);
+  users[u.email] = u;
+  saveUsers(users);
+  Object.assign(state.user, u);
+}
+
+/* ===== Stadt ===== */
+function normalizeCityKey(input){
+  if(!input) return 'default';
+  const clean = input.toLowerCase()
+    .replace(/[^a-zäöüß\s]/g, '')
+    .split(/[\s,]+/)[0]
+    .trim();
+  for(const key of Object.keys(CITY_SIZES)){
+    if(key === 'default') continue;
+    if(clean.includes(key) || key.includes(clean)){
+      return key;
+    }
+  }
+  return 'default';
+}
+function getCityName(key){
+  return (CITY_SIZES[key] || CITY_SIZES.default).name;
+}
+
+/* ===== VIP ===== */
+function computeCityLeaderboard(cityKey){
+  const users = getUsers();
+  const prevMonth = -1;
+  return Object.values(users)
+    .filter(u => (u.cityKey || 'default') === cityKey)
+    .map(u => ({
+      user: u,
+      points: getMonthlyPoints(u, prevMonth),
+      pointsThisMonth: getMonthlyPoints(u, 0),
+    }))
+    .filter(x => x.points >= VIP_MIN_ACTIVITY_POINTS)
+    .sort((a,b) => b.points - a.points);
+}
+
+function computeVipSlots(cityKey){
+  const users = getUsers();
+  const total = Object.values(users).filter(u => (u.cityKey || 'default') === cityKey).length;
+  const raw = Math.max(1, Math.floor(total * VIP_TOP_PERCENT));
+  return Math.min(raw, VIP_MAX_PER_CITY);
+}
+
+function generateVipCode(uid, monthStart){
+  const d = new Date(monthStart);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const suffix = (uid || '').slice(-4).toUpperCase();
+  return `KISTE-VIP-${y}${m}-${suffix}`;
+}
+
+function updateVipStatusForCity(cityKey){
+  const board = computeCityLeaderboard(cityKey);
+  const slots = computeVipSlots(cityKey);
+  const users = getUsers();
+  const now = Date.now();
+  const nextMonthStart = getNextMonthStart();
+
+  Object.values(users).forEach(u => {
+    if((u.cityKey || 'default') !== cityKey) return;
+    if(u.isVip && u.vipUntil && u.vipUntil < now){
+      u.isVip = false;
+      u.vipCode = '';
+    }
+  });
+
+  let changed = false;
+  board.slice(0, slots).forEach(entry => {
+    const u = users[entry.user.email];
+    if(!u) return;
+    if(!u.isVip || (u.vipUntil && u.vipUntil < now)){
+      u.isVip = true;
+      u.vipUntil = nextMonthStart;
+      u.vipCode = generateVipCode(u.uid, nextMonthStart);
+      u.vipGrantedAt = now;
+      u.vipMonthsWon = (u.vipMonthsWon || 0) + 1;
+      users[u.email] = u;
+      changed = true;
+    }
+  });
+
+  if(changed){
+    saveUsers(users);
+    const me = users[state.user?.email];
+    if(me) Object.assign(state.user, me);
+  }
+}
+
+function runVipCycleIfDue(){
+  if(!state.user) return;
+  const last = lsGet(LS_LAST_VIP_CALC, 0);
+  if(Date.now() - last < MONTH_MS) return;
+
+  const users = getUsers();
+  const cityKeys = new Set(Object.values(users).map(u => u.cityKey || 'default'));
+  cityKeys.forEach(k => updateVipStatusForCity(k));
+
+  lsSet(LS_LAST_VIP_CALC, Date.now());
+
+  const fresh = getUsers()[state.user.email];
+  if(fresh){
+    Object.assign(state.user, fresh);
+    if(state.user.isVip){
+      toast(`🎉 Du bist jetzt VIP & Moderator! Gratis-Abo für den Folgemonat.`);
+    }
+  }
+}
+
+function getMyMonthlyPoints(){
+  if(!state.user) return 0;
+  return getMonthlyPoints(state.user, 0);
+}
+function getMyPreviousMonthPoints(){
+  if(!state.user) return 0;
+  return getMonthlyPoints(state.user, -1);
+}
+
+/* ===== Mod-Rechte ===== */
+function isModerator(user){
+  if(!user) return false;
+  return user.isVip && user.vipUntil && user.vipUntil > Date.now();
+}
+
+/* ===== Escalations / Flagged Users ===== */
+function getEscalations(){ return lsGet(LS_ESCALATIONS, []); }
+function saveEscalations(e){ lsSet(LS_ESCALATIONS, e); }
+function getFlaggedUsers(){ return lsGet(LS_FLAGGED, []); }
+function saveFlaggedUsers(f){ lsSet(LS_FLAGGED, f); }
+
+function flagUser(uid, name, reason){
+  const flagged = getFlaggedUsers();
+  if(flagged.some(f => f.uid === uid && f.active)) return;
+  flagged.push({
+    id: uid_(),
+    uid,
+    name,
+    reason,
+    flaggedAt: Date.now(),
+    active: true,
+    by: state.user?.name || 'System',
+  });
+  saveFlaggedUsers(flagged);
+}
+
+function uid_(){ return 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,5); }
+
+/* ===== Image compression ===== */
+function compressImage(file, maxDim = 900){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        const scale = Math.min(1, maxDim / Math.max(width, height));
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+function compressLogo(file, size = 256){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(img.width, img.height);
+        const sx = (img.width - s) / 2;
+        const sy = (img.height - s) / 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        canvas.getContext('2d').drawImage(img, sx, sy, s, s, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ===== Toast ===== */
+let toastTimer;
+function toast(msg, isError){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.toggle('error', !!isError);
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/* ===== Demo-Daten ===== */
+function seedDemoItems(){
+  const now = Date.now();
+  const base = DEFAULT_LOC;
+  const demos = [
+    { title:'Gemüsekiste – frische Ernte', cat:'food', emoji:'🍅🥕🥬',
+      desc:'Tomaten, Karotten, Salat – alles aus dem eigenen Garten.',
+      dLat:0.0009, dLng:-0.0006, addr:'Gartenstraße 14, Vorgarten',
+      giver:'Maria K.', minAgo:12, hours:24, verified:true, verifiers:['Thomas B.','Lena S.','Anna H.'] },
+    { title:'Kinderbücher & Puzzle', cat:'books', emoji:'📚🧸🎲',
+      desc:'Gut erhaltene Bilderbücher und zwei Holzpuzzle ab 3 Jahren.',
+      dLat:-0.0006, dLng:0.0008, addr:'Lindenweg 3, Hofeingang',
+      giver:'Thomas B.', minAgo:65, hours:48, verified:true, verifiers:['Maria K.','Lena S.','Anna H.'] },
+    { title:'Brettspiele-Sammlung', cat:'toys', emoji:'🎲♟️🃏',
+      desc:'Drei gut erhaltene Brettspiele für die ganze Familie.',
+      dLat:0.0013, dLng:0.0005, addr:'Bergstraße 42, Eingang',
+      giver:'Peter M.', minAgo:5, hours:24, verified:false, verifiers:[] },
+  ];
+  return demos.map((d, i) => ({
+    id: 'demo_' + i,
+    title: d.title, category: d.cat, desc: d.desc, emoji: d.emoji, photo: null,
+    lat: base.lat + d.dLat, lng: base.lng + d.dLng, address: d.addr,
+    giver: d.giver, giverInitials: makeInitials(d.giver), giverLogo: null,
+    giverTrust: d.verified ? 'silver' : 'bronze',
+    mine: false, ownerId: 'demo_' + i,
+    createdAt: now - d.minAgo*60000,
+    expiresAt: now + d.hours*3600000,
+    verifications: d.verifiers.map((v, k) => ({
+      userId: 'demo_v_' + i + '_' + k,
+      name: v, initials: makeInitials(v), logo: null,
+      trust: 'silver', createdAt: now - (d.minAgo - 3 - k)*60000,
+      distance: 40 + k * 30,
+    })),
+    negativeReports: [],
+    bannedAt: 0,
+    flaggedForSupport: false,
+  }));
+}
+
+function seedCityDemoUsers(){
+  const users = getUsers();
+  const cityKey = state.user?.cityKey || 'default';
+  if(cityKey === 'default') return;
+
+  const targetCount = 25;
+  let created = 0;
+  for(let i = 0; i < targetCount; i++){
+    const email = `demo_${cityKey}_${i}@kiste.demo`;
+    if(users[email]) continue;
+
+    let basePoints;
+    if(i < 5) basePoints = 80 + Math.floor(Math.random() * 120);
+    else if(i < 15) basePoints = 30 + Math.floor(Math.random() * 50);
+    else basePoints = Math.floor(Math.random() * 25);
+
+    const prevMonthTs = getMonthStart(-1) + 5 * 24 * 3600000;
+    const name = DEMO_CITY_NAMES[i % DEMO_CITY_NAMES.length];
+    const initials = makeInitials(name);
+
+    users[email] = {
+      uid: 'demo_u_' + cityKey + '_' + i,
+      email, password: hashPass('demo_' + Math.random()),
+      name, initials, logo: null,
+      verified: true,
+      points: 0, confirmations: 0,
+      homeAddress: '', bannedUntil: 0,
+      city: getCityName(cityKey), cityKey: cityKey,
+      activityLog: [{ type:'seed', points: basePoints, city: cityKey, ts: prevMonthTs }],
+      isVip: false, vipUntil: 0, vipCode: '', vipGrantedAt: 0, vipMonthsWon: 0,
+      createdAt: prevMonthTs - 30 * 24 * 3600000,
+    };
+    created++;
+  }
+  if(created) saveUsers(users);
+}
+
+/* =====================================================
+   AUTH
+   ===================================================== */
+function hashPass(pw){
+  let h = 0;
+  for(let i = 0; i < pw.length; i++){
+    h = ((h << 5) - h) + pw.charCodeAt(i);
+    h |= 0;
+  }
+  return 'h_' + h.toString(36);
+}
+function getUsers(){ return lsGet(LS_USERS, {}); }
+function saveUsers(u){ lsSet(LS_USERS, u); }
+
+function mapAuthError(code){
+  const map = {
+    'email_in_use': 'Diese E-Mail ist bereits registriert.',
+    'invalid_email': 'Ungültige E-Mail-Adresse.',
+    'weak_password': 'Passwort ist zu schwach (min. 6 Zeichen).',
+    'user_not_found': 'Kein Konto mit dieser E-Mail.',
+    'wrong_password': 'Falsches Passwort.',
+    'banned': 'Dein Konto ist vorübergehend gesperrt.',
+  };
+  return map[code] || 'Fehler bei der Anmeldung.';
+}
+function isValidEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+function registerUser(email, password){
+  const users = getUsers();
+  if(!isValidEmail(email)) throw new Error('invalid_email');
+  if(password.length < 6) throw new Error('weak_password');
+  if(users[email]) throw new Error('email_in_use');
+
+  const user = {
+    uid: 'u_' + Date.now().toString(36),
+    email, password: hashPass(password),
+    name: email.split('@')[0],
+    logo: null,
+    initials: makeInitials(email.split('@')[0]),
+    verified: true,
+    points: 0, confirmations: 0,
+    homeAddress: '', bannedUntil: 0,
+    city: '', cityKey: 'default',
+    activityLog: [],
+    isVip: false, vipUntil: 0, vipCode: '', vipGrantedAt: 0, vipMonthsWon: 0,
+    createdAt: Date.now(),
+  };
+  users[email] = user;
+  saveUsers(users);
+  return user;
+}
+
+function loginUser(email, password){
+  const users = getUsers();
+  if(!isValidEmail(email)) throw new Error('invalid_email');
+  const u = users[email];
+  if(!u) throw new Error('user_not_found');
+  if(u.password !== hashPass(password)) throw new Error('wrong_password');
+  if(!u.verified) throw new Error('not_verified');
+  return u;
+}
+
+function setSession(uid){ lsSet(LS_SESSION, { uid, ts: Date.now() }); }
+function clearSession(){ try{ localStorage.removeItem(LS_SESSION); }catch(e){} }
+function getSession(){ return lsGet(LS_SESSION, null); }
+function findUserByUid(uid){
+  const users = getUsers();
+  return Object.values(users).find(u => u.uid === uid) || null;
+}
+function updateCurrentUser(patch){
+  if(!state.user) return;
+  const users = getUsers();
+  const u = users[state.user.email];
+  if(!u) return;
+  Object.assign(u, patch);
+  users[state.user.email] = u;
+  saveUsers(users);
+  Object.assign(state.user, patch);
+}
+
+/* =====================================================
+   AUTH UI
+   ===================================================== */
+const authOverlay = document.getElementById('authOverlay');
+const authTitle = document.getElementById('authTitle');
+const authSubtitle = document.getElementById('authSubtitle');
+const authSubmit = document.getElementById('authSubmit');
+const authToggle = document.getElementById('authToggle');
+const authConfirmField = document.getElementById('authConfirmField');
+
+function renderAuthToggle(){
+  authTitle.textContent = state.isRegistering ? 'Konto erstellen' : 'Willkommen zurück';
+  authSubtitle.textContent = state.isRegistering
+    ? 'Registriere dich, um Kisten in deiner Nachbarschaft zu teilen.'
+    : 'Melde dich an, um Kisten zu teilen und zu finden.';
+  authSubmit.textContent = state.isRegistering ? 'Registrieren' : 'Anmelden';
+  authConfirmField.style.display = state.isRegistering ? 'block' : 'none';
+  authToggle.innerHTML = state.isRegistering
+    ? 'Bereits ein Konto? <span>Anmelden</span>'
+    : 'Noch kein Konto? <span>Registrieren</span>';
+}
+
+authToggle.addEventListener('click', () => {
+  state.isRegistering = !state.isRegistering;
+  renderAuthToggle();
+});
+
+authSubmit.addEventListener('click', () => {
+  const email = document.getElementById('authEmail').value.trim().toLowerCase();
+  const password = document.getElementById('authPassword').value;
+  const confirm = document.getElementById('authConfirm').value;
+
+  if(!email || !password){ toast('Bitte E-Mail und Passwort eingeben', true); return; }
+  if(state.isRegistering && password !== confirm){ toast('Passwörter stimmen nicht überein', true); return; }
+
+  try{
+    let user;
+    if(state.isRegistering){
+      user = registerUser(email, password);
+      toast('Konto erstellt. Willkommen!');
+    } else {
+      user = loginUser(email, password);
+      if(isUserBanned(user)){
+        throw new Error('banned');
+      }
+      toast('Willkommen zurück!');
+    }
+    state.user = user;
+    setSession(user.uid);
+    authOverlay.classList.remove('show');
+    initApp();
+  } catch(err){
+    toast(mapAuthError(err.message), true);
+  }
+});
+
+function showAuth(){
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+  document.getElementById('authConfirm').value = '';
+  state.isRegistering = false;
+  renderAuthToggle();
+  authOverlay.classList.add('show');
+}
+
+function logout(){
+  if(!confirm('Wirklich abmelden?')) return;
+  clearSession();
+  state.user = null;
+  state.items = state.items.filter(it => !it.mine);
+  saveAll();
+  closeModal();
+  showAuth();
+}
+
+/* =====================================================
+   ITEM-HILFSFUNKTIONEN
+   ===================================================== */
+function getVerificationCount(item){ return (item.verifications || []).length; }
+function getNegativeReports(item){ return (item.negativeReports || []); }
+function isItemActive(item){ return getVerificationCount(item) >= VERIFICATIONS_NEEDED; }
+function isItemBanned(item){ return item.bannedAt && item.bannedAt > 0; }
+function hasUserConfirmed(item, userId){
+  return (item.verifications || []).some(v => v.userId === userId);
+}
+function hasUserNegativelyReported(item, userId){
+  return (item.negativeReports || []).some(v => v.userId === userId);
+}
+
+/* =====================================================
+   POSITIVE BESTÄTIGUNG
+   ===================================================== */
+async function confirmItem(itemId){
+  if(!state.user){ toast('Bitte zuerst anmelden', true); return; }
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  if(item.mine){ toast('Eigene Kiste kann nicht bestätigt werden', true); return; }
+  if(isExpired(item)){ toast('Kiste ist abgelaufen', true); return; }
+  if(hasUserConfirmed(item, state.user.uid)){ toast('Du hast diese Kiste schon bestätigt'); return; }
+  if(isItemActive(item)){ toast('Kiste ist bereits aktiv'); return; }
+  if(isItemBanned(item)){ toast('Kiste wurde deaktiviert', true); return; }
+
+  toast('Standort wird geprüft…');
+  const pos = await getEffectivePosition();
+  const dist = distanceMeters(pos.lat, pos.lng, item.lat, item.lng);
+
+  if(dist > GPS_CONFIRM_RADIUS_M){
+    toast(`Du bist ${Math.round(dist)} m entfernt. Bestätigung nur vor Ort (< ${GPS_CONFIRM_RADIUS_M} m).`, true);
+    return;
+  }
+
+  item.verifications = item.verifications || [];
+  const wasInactive = item.verifications.length < VERIFICATIONS_NEEDED;
+  item.verifications.push({
+    userId: state.user.uid,
+    name: state.user.name,
+    initials: state.user.initials,
+    logo: state.user.logo,
+    trust: getTrustLevel(state.user.points || 0).badge,
+    isMod: isModerator(state.user),
+    createdAt: Date.now(),
+    distance: Math.round(dist),
+  });
+
+  let earned = POINTS_CONFIRM;
+  const nowActive = item.verifications.length >= VERIFICATIONS_NEEDED;
+  if(wasInactive && nowActive){ earned += POINTS_ACTIVATOR_BONUS; }
+
+  addPointsAndLog(earned, wasInactive && nowActive ? 'activate' : 'confirm');
+  updateCurrentUser({ confirmations: (state.user.confirmations || 0) + 1 });
+
+  if(nowActive){
+    const users = getUsers();
+    const poster = Object.values(users).find(u => u.uid === item.ownerId);
+    if(poster){
+      poster.points = (poster.points || 0) + POINTS_POST_VERIFIED;
+      logActivity(poster, 'post_verified', POINTS_POST_VERIFIED);
+      users[poster.email] = poster;
+      saveUsers(users);
+      if(state.user.uid === poster.uid) Object.assign(state.user, poster);
+    }
+    toast(`Kiste aktiviert! +${earned} Punkte für dich 🎉`);
+  } else {
+    toast(`Danke! +${earned} Punkte. ${item.verifications.length}/${VERIFICATIONS_NEEDED} Bestätigungen.`);
+  }
+
+  saveAll();
+  closeModal();
+  renderAll();
+}
+
+/* =====================================================
+   NEGATIVE BESTÄTIGUNG
+   ===================================================== */
+async function negativeReportItem(itemId){
+  if(!state.user){ toast('Bitte zuerst anmelden', true); return; }
+  const item = state.items.find(x => x.id === itemId);
+  if(!item) return;
+  if(item.mine){ toast('Du kannst deine eigene Kiste nicht als fehlend melden', true); return; }
+  if(isExpired(item)){ toast('Kiste ist bereits abgelaufen', true); return; }
+  if(isItemBanned(item)){ toast('Kiste ist bereits deaktiviert'); return; }
+  if(hasUserNegativelyReported(item, state.user.uid)){ toast('Du hast diese Kiste schon als fehlend gemeldet'); return; }
+
+  toast('Standort wird geprüft…');
+  const pos = await getEffectivePosition();
+  const dist = distanceMeters(pos.lat, pos.lng, item.lat, item.lng);
+
+  if(dist > GPS_CONFIRM_RADIUS_M){
+    toast(`Du bist ${Math.round(dist)} m entfernt. Meldung nur vor Ort (< ${GPS_CONFIRM_RADIUS_M} m).`, true);
+    return;
+  }
+
+  const isAtOwnHome = isUserAtOwnHome(pos, item);
+
+  item.negativeReports = item.negativeReports || [];
+  item.negativeReports.push({
+    userId: state.user.uid,
+    name: state.user.name,
+    initials: state.user.initials,
+    logo: state.user.logo,
+    isMod: isModerator(state.user),
+    createdAt: Date.now(),
+    distance: Math.round(dist),
+    isAtOwnHome,
+  });
+
+  addPointsAndLog(POINTS_NEGATIVE_CONFIRM, 'negative_report');
+
+  const itemAge = Date.now() - item.createdAt;
+  const reportsInWindow = item.negativeReports.filter(r =>
+    r.createdAt - item.createdAt <= NEGATIVE_REPORT_WINDOW_MS
+  );
+
+  let message = `Danke für die Meldung. ${reportsInWindow.length}/${NEGATIVE_REPORTS_FOR_BAN} Meldungen.`;
+
+  if(reportsInWindow.length >= NEGATIVE_REPORTS_FOR_BAN){
+    const anyAtOwnHome = reportsInWindow.some(r => r.isAtOwnHome);
+
+    if(anyAtOwnHome){
+      sendEscalationEmail(item, reportsInWindow);
+      item.bannedAt = 0;
+      item.flaggedForSupport = true;
+      message = 'Die Meldungen wurden an unseren Support eskaliert. Vielen Dank!';
+      toast(message);
+    } else {
+      banItemOwner(item, reportsInWindow);
+      message = 'Die Kiste wurde deaktiviert. Der Ersteller wurde für 24 Std. gesperrt.';
+      toast(message, true);
+    }
+  } else {
+    toast(message);
+  }
+
+  saveAll();
+  closeModal();
+  renderAll();
+}
+
+function isUserAtOwnHome(pos, item){
+  if(!state.user || !state.user.homeAddress) return false;
+  const home = (state.user.homeAddress || '').toLowerCase().trim();
+  const boxAddr = (item.address || '').toLowerCase().trim();
+  if(!home || !boxAddr) return false;
+  return boxAddr.includes(home) || home.includes(boxAddr.split(',')[0].trim());
+}
+
+function sendEscalationEmail(item, reports){
+  const escalations = getEscalations();
+  const esc = {
+    id: 'esc_' + Date.now().toString(36),
+    itemId: item.id,
+    itemTitle: item.title,
+    itemAddress: item.address,
+    itemPhoto: item.photo,
+    ownerId: item.ownerId,
+    ownerName: item.giver,
+    reporterCount: reports.length,
+    reporters: reports.map(r => ({
+      name: r.name, uid: r.userId,
+      distance: r.distance, atOwnHome: r.isAtOwnHome,
+    })),
+    createdAt: Date.now(),
+    status: 'open',
+  };
+  escalations.push(esc);
+  saveEscalations(escalations);
+  console.log('📧 [DEMO] Eskalation an Support:', esc);
+}
+
+function banItemOwner(item, reports){
+  item.bannedAt = Date.now();
+
+  const users = getUsers();
+  const owner = Object.values(users).find(u => u.uid === item.ownerId);
+  if(owner){
+    owner.bannedUntil = Date.now() + BAN_DURATION_MS;
+    owner.lastBanReason = 'Kiste wurde 3× als nicht vorhanden gemeldet';
+    owner.lastBanAt = Date.now();
+    users[owner.email] = owner;
+    saveUsers(users);
+
+    if(state.user.uid === owner.uid){
+      state.user.bannedUntil = owner.bannedUntil;
+      state.user.lastBanReason = owner.lastBanReason;
+    }
+  }
+}
+
+/* =====================================================
+   FEED RENDER
+   ===================================================== */
+function getVisibleItems(){
+  const q = state.search.trim().toLowerCase();
+  return state.items
+    .filter(it => !isExpired(it))
+    .filter(it => state.filter === 'all' || it.category === state.filter)
+    .filter(it => {
+      if(!q) return true;
+      return (it.title + ' ' + (it.desc||'') + ' ' + (it.address||'') + ' ' + it.giver).toLowerCase().includes(q);
+    })
+    .sort((a,b) => {
+      const aActive = isItemActive(a) && !isItemBanned(a) ? 1 : 0;
+      const bActive = isItemActive(b) && !isItemBanned(b) ? 1 : 0;
+      if(aActive !== bActive) return bActive - aActive;
+      return b.createdAt - a.createdAt;
+    });
+}
+
+function trustBadgeHtml(trust){
+  const lvl = TRUST_LEVELS.find(l => l.badge === trust) || TRUST_LEVELS[0];
+  return `<span class="trust-dot" style="background:${lvl.color};" title="${lvl.name}"></span>`;
+}
+
+function itemCardHtml(it, opts = {}){
+  const cat = CATEGORIES[it.category] || CATEGORIES.other;
+  const expired = isExpired(it);
+  const active = isItemActive(it);
+  const banned = isItemBanned(it);
+  const verCount = getVerificationCount(it);
+  const pending = !active && !expired && !banned;
+  const negCount = getNegativeReports(it).length;
+
+  const bgStyle = it.photo
+    ? `background-image:url('${it.photo}')`
+    : `background: linear-gradient(135deg, ${cat.bg}, ${cat.color}33)`;
+  const inner = it.photo ? '' : (it.emoji || cat.emoji);
+
+  const stampHtml = it.giver ? `
+    <div class="profile-stamp">
+      <div class="stamp-avatar">
+        ${it.giverLogo ? `<img src="${it.giverLogo}" alt="">` : escapeHtml(it.giverInitials || makeInitials(it.giver))}
+      </div>
+      <span>${escapeHtml(it.giver)}</span>
+      ${trustBadgeHtml(it.giverTrust || 'bronze')}
+    </div>` : '';
+
+  const blurClass = (pending || banned) ? 'blurred' : '';
+  let blurOverlay = '';
+  if(banned){
+    blurOverlay = `<div class="blur-overlay">🚫 Kiste deaktiviert<br><span style="font-weight:400;font-size:11px;">${negCount}× als fehlend gemeldet</span></div>`;
+  } else if(pending){
+    blurOverlay = `<div class="blur-overlay">⏳ Foto wird geprüft<br><span style="font-weight:400;font-size:11px;">${verCount}/${VERIFICATIONS_NEEDED} Bestätigungen vor Ort</span></div>`;
+  }
+
+  const verifyBar = pending ? `
+    <div class="verify-bar">
+      <span>🔍 ${verCount}/${VERIFICATIONS_NEEDED}</span>
+      <div class="progress"><div class="progress-fill" style="width:${(verCount/VERIFICATIONS_NEEDED)*100}%"></div></div>
+    </div>` : '';
+
+  return `
+    <div class="card ${pending?'pending':''} ${banned?'banned':''}" data-id="${it.id}" style="${expired?'opacity:.55':''}">
+      <div class="card-img ${blurClass}" style="${blurClass?'':bgStyle}">
+        ${blurClass ? `<div style="position:absolute;inset:0;background:${bgStyle};background-size:cover;background-position:center;"></div>` : inner}
+        ${blurOverlay}
+        <span class="badge ${pending?'pending-badge':''} ${banned?'banned-badge':''}">${cat.emoji} ${cat.label}</span>
+        <span class="time">${expired ? 'abgelaufen' : timeAgo(it.createdAt)}</span>
+        ${stampHtml}
+      </div>
+      <div class="card-body">
+        <h3>${escapeHtml(it.title)}</h3>
+        <div class="location">${escapeHtml(it.address || 'Standort unbekannt')}</div>
+        ${verifyBar}
+        <div class="card-footer">
+          <div class="giver">
+            <div class="avatar">${escapeHtml(it.giverInitials || makeInitials(it.giver))}</div>
+            <span>${opts.mine ? (expired ? 'abgelaufen' : expiresIn(it.expiresAt)) : escapeHtml(it.giver)}</span>
+          </div>
+          <button class="btn-route" data-route="${it.id}">Route →</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function bindCards(rootEl){
+  rootEl.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', e => {
+      if(e.target.closest('[data-route]')) return;
+      openDetail(card.dataset.id);
+    });
+  });
+  rootEl.querySelectorAll('[data-route]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openRoute(btn.dataset.route);
+    });
+  });
+}
+
+function renderChips(){
+  const bar = document.getElementById('chipBar');
+  const chips = [{ id:'all', label:'Alle', emoji:'🌿' },
+    ...Object.entries(CATEGORIES).map(([k,v]) => ({ id:k, label:v.label, emoji:v.emoji }))];
+  bar.innerHTML = chips.map(c =>
+    `<div class="chip ${state.filter===c.id?'active':''}" data-cat="${c.id}">${c.emoji} ${c.label}</div>`
+  ).join('');
+  bar.querySelectorAll('.chip').forEach(el => {
+    el.addEventListener('click', () => {
+      state.filter = el.dataset.cat;
+      renderChips();
+      renderFeed();
+    });
+  });
+}
+
+function renderFeed(){
+  const list = document.getElementById('feedList');
+  const items = getVisibleItems();
+  const tipHtml = `
+    <div class="tip">
+      <span>💡</span>
+      <div>
+        <strong>So funktioniert's</strong>
+        Fotos sind verwaschen, bis 3 Nutzer <b>vor Ort</b> die Kiste bestätigen. Bestätigung nur aus der Nähe (< ${GPS_CONFIRM_RADIUS_M} m).
+      </div>
+    </div>`;
+
+  if(items.length === 0){
+    list.innerHTML = tipHtml + `
+      <div class="empty">
+        <span class="emo">🌱</span>
+        <strong>Noch keine Kisten hier</strong>
+        Sei die erste Person und teile etwas in deiner Nachbarschaft.
+      </div>`;
+    return;
+  }
+
+  const activeItems = items.filter(it => isItemActive(it) && !isItemBanned(it));
+  const pendingItems = items.filter(it => !isItemActive(it) && !isItemBanned(it));
+  const bannedItems = items.filter(it => isItemBanned(it));
+
+  let html = tipHtml;
+  if(activeItems.length){
+    html += `<div class="section-title">In deiner Nähe</div>` + activeItems.map(it => itemCardHtml(it)).join('');
+  }
+  if(pendingItems.length){
+    html += `<div class="section-title">⏳ Wartet auf Bestätigung</div>` + pendingItems.map(it => itemCardHtml(it)).join('');
+  }
+  if(bannedItems.length){
+    html += `<div class="section-title">🚫 Deaktiviert</div>` + bannedItems.map(it => itemCardHtml(it)).join('');
+  }
+  list.innerHTML = html;
+  bindCards(list);
+}
+
+function renderMine(){
+  const list = document.getElementById('mineList');
+  const mine = state.items.filter(it => it.mine).sort((a,b) => b.createdAt - a.createdAt);
+  if(mine.length === 0){
+    list.innerHTML = `
+      <div class="empty">
+        <span class="emo">📦</span>
+        <strong>Du hast noch nichts geteilt</strong>
+        Tippe unten auf „Teilen", um deine erste Kiste zu fotografieren.
+      </div>`;
+    return;
+  }
+  list.innerHTML = mine.map(it => itemCardHtml(it, { mine: true })).join('');
+  bindCards(list);
+}
+
+function renderProfile(){
+  if(!state.user) return;
+  document.getElementById('profName').textContent = state.user.name;
+  document.getElementById('profEmail').textContent = state.user.email + ' · verifiziert ✓';
+  const av = document.getElementById('profAvatar');
+  if(state.user.logo){
+    av.innerHTML = `<img src="${state.user.logo}" alt="">`;
+  } else {
+    av.textContent = state.user.initials || makeInitials(state.user.name);
+  }
+
+  const points = state.user.points || 0;
+  const level = getTrustLevel(points);
+  const next = getNextLevel(points);
+
+  document.getElementById('pointsNum').textContent = points;
+
+  const badgeEl = document.getElementById('profTrustBadge');
+  let badges = `<span class="trust-badge ${level.badge}">${level.emoji} ${level.name}</span>`;
+  if(state.user.isVip) badges += ` <span class="vip-badge">★ VIP</span>`;
+  if(isModerator(state.user)) badges += ` <span class="mod-badge">🛡 MOD</span>`;
+  badgeEl.innerHTML = badges;
+
+  let progressPct = 100;
+  let nextText = 'Höchste Stufe erreicht 🏆';
+  if(next){
+    const prevMin = level.min;
+    const span = next.min - prevMin;
+    progressPct = Math.min(100, Math.max(0, ((points - prevMin) / span) * 100));
+    nextText = `Noch ${next.min - points} Punkte bis „${next.name}"`;
+  }
+  document.getElementById('trustProgress').style.width = progressPct + '%';
+  document.getElementById('pointsNext').textContent = nextText;
+
+  const mine = state.items.filter(it => it.mine);
+  document.getElementById('statShared').textContent = mine.length;
+  document.getElementById('statConfirmations').textContent = getMyMonthlyPoints();
+
+  updateCityMenu();
+  renderBanBanner();
+}
+
+function updateCityMenu(){
+  const cityShort = document.getElementById('cityShort');
+  if(cityShort && state.user){
+    cityShort.textContent = state.user.city ? state.user.city : 'nicht gesetzt';
+  }
+  const homeShort = document.getElementById('homeAddressShort');
+  if(homeShort && state.user){
+    const addr = state.user.homeAddress || '';
+    homeShort.textContent = addr ? (addr.length > 15 ? addr.slice(0,15) + '…' : addr) : 'nicht gesetzt';
+  }
+}
+
+function renderBanBanner(){
+  const banned = isUserBanned(state.user);
+  const profileBanner = document.getElementById('banBannerProfile');
+  const shareWarning = document.getElementById('banWarning');
+
+  if(banned){
+    const remain = formatBanRemaining(getBanRemainingMs(state.user));
+    const html = `
+      <div class="ban-banner">
+        <strong>🚫 Dein Konto ist gesperrt</strong>
+        Du kannst für <b>${remain}</b> keine neuen Fotos hochladen. Grund: ${escapeHtml(state.user.lastBanReason || 'Verstoß gegen die Community-Regeln')}.
+      </div>`;
+    if(profileBanner) profileBanner.innerHTML = html;
+    if(shareWarning) shareWarning.innerHTML = html;
+  } else {
+    if(profileBanner) profileBanner.innerHTML = '';
+    if(shareWarning) shareWarning.innerHTML = '';
+  }
+}
+
+/* =====================================================
+   LOGO
+   ===================================================== */
+function renderLogo(){
+  const img = document.getElementById('logoImg');
+  const fallback = document.getElementById('logoFallback');
+  const authImg = document.getElementById('authLogoImg');
+  const authFallback = document.getElementById('authLogoFallback');
+  const src = state.user && state.user.logo ? state.user.logo : null;
+  [img, authImg].forEach((el, i) => {
+    const fb = i === 0 ? fallback : authFallback;
+    if(!el) return;
+    if(src){ el.src = src; el.style.display = 'block'; fb.style.display = 'none'; }
+    else { el.removeAttribute('src'); el.style.display = 'none'; fb.style.display = 'flex'; }
+  });
+}
+
+/* =====================================================
+   ROUTE
+   ===================================================== */
+function openRoute(id){
+  const it = state.items.find(x => x.id === id);
+  if(!it) return;
+  if(it.lat && it.lng){
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${it.lat},${it.lng}`, '_blank');
+  } else {
+    const q = encodeURIComponent(it.address || it.title);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank');
+  }
+}
+
+/* =====================================================
+   DETAIL / MODAL
+   ===================================================== */
+function openDetail(id){
+  const it = state.items.find(x => x.id === id);
+  if(!it) return;
+  const cat = CATEGORIES[it.category] || CATEGORIES.other;
+  const sheet = document.getElementById('modalSheet');
+  const active = isItemActive(it);
+  const banned = isItemBanned(it);
+  const verCount = getVerificationCount(it);
+  const negCount = getNegativeReports(it).length;
+  const pending = !active && !isExpired(it) && !banned;
+
+  const photoHtml = it.photo
+    ? `<div class="modal-photo ${(pending||banned)?'blurred':''}" style="${(pending||banned)?'':'background-image:url(\''+it.photo+'\')'}">
+        ${(pending||banned) ? `
+          <div class="blur-overlay">
+            ${banned ? `🚫 Kiste deaktiviert<br><small style="font-weight:400;font-size:11px;">${negCount}× als fehlend gemeldet</small>`
+                     : `⏳ Foto wird geprüft<br><small style="font-weight:400;font-size:11px;">${verCount}/${VERIFICATIONS_NEEDED} Bestätigungen vor Ort</small>`}
+          </div>` : ''}
+       </div>`
+    : `<div class="modal-photo ${(pending||banned)?'blurred':''}" style="${(pending||banned)?'background:linear-gradient(135deg,#e8e8e8,#cfcfcf)':'background:linear-gradient(135deg, '+cat.bg+', '+cat.color+'44)'}">
+        ${(pending||banned) ? '' : (it.emoji || cat.emoji)}
+       </div>`;
+
+  const canConfirm = !it.mine && !isExpired(it) && !hasUserConfirmed(it, state.user.uid) && !active && !banned;
+  const canNegReport = !it.mine && !isExpired(it) && !hasUserNegativelyReported(it, state.user.uid) && !banned;
+  const alreadyConfirmed = !it.mine && hasUserConfirmed(it, state.user.uid);
+  const amMod = isModerator(state.user);
+
+  const verifiersHtml = (it.verifications && it.verifications.length)
+    ? `<div class="verify-list">
+        <div class="section-title" style="margin:0 0 6px;">Vor-Ort bestätigt von</div>
+        ${it.verifications.map(v => `
+          <div class="verify-item">
+            <div class="v-avatar">
+              ${v.logo ? `<img src="${v.logo}" alt="">` : escapeHtml(v.initials || makeInitials(v.name))}
+            </div>
+            <div class="v-info">
+              <div class="v-name">
+                ${escapeHtml(v.name)} ${trustBadgeHtml(v.trust || 'bronze')}
+                ${v.isMod ? '<span class="mod-badge">🛡 MOD</span>' : ''}
+              </div>
+              <div class="v-time">${timeAgo(v.createdAt)} · ${v.distance ? Math.round(v.distance)+' m entfernt' : 'vor Ort'}</div>
+            </div>
+            <div class="v-check">✓</div>
+          </div>`).join('')}
+       </div>` : '';
+
+  const negativeHtml = (it.negativeReports && it.negativeReports.length)
+    ? `<div class="verify-list" style="border-top-color:#f5c7c1;">
+        <div class="section-title" style="margin:0 0 6px;color:var(--bio-danger);">Als fehlend gemeldet</div>
+        ${it.negativeReports.map(v => `
+          <div class="verify-item">
+            <div class="v-avatar">
+              ${v.logo ? `<img src="${v.logo}" alt="">` : escapeHtml(v.initials || makeInitials(v.name))}
+            </div>
+            <div class="v-info">
+              <div class="v-name">
+                ${escapeHtml(v.name)}
+                ${v.isMod ? '<span class="mod-badge">🛡 MOD</span>' : ''}
+              </div>
+              <div class="v-time">${timeAgo(v.createdAt)}${v.isAtOwnHome ? ' · eigene Adresse' : ''}</div>
+            </div>
+            <div class="v-x">✕</div>
+          </div>`).join('')}
+       </div>` : '';
+
+  let actionButtons = '';
+  if(canConfirm || canNegReport){
+    actionButtons = `
+      <div class="info-box" style="margin-top:14px;">
+        <strong>📍 Vor-Ort-Aktion nötig</strong>
+        Bestätigungen sind nur im Umkreis von <b>${GPS_CONFIRM_RADIUS_M} m</b> möglich. Dein GPS-Standort wird beim Klick abgefragt.
+      </div>
+    `;
+    if(canConfirm){
+      actionButtons += `<button class="btn-confirm" id="btnConfirm">✓ Kiste vor Ort bestätigen (+${POINTS_CONFIRM} P${verCount === VERIFICATIONS_NEEDED - 1 ? ` +${POINTS_ACTIVATOR_BONUS} Bonus` : ''})</button>`;
+    }
+    if(canNegReport){
+      actionButtons += `<button class="btn-negative" id="btnNegReport">✕ Kiste ist nicht (mehr) vorhanden</button>`;
+    }
+  }
+
+  // Mod-Aktionen
+  let modActions = '';
+  if(amMod && !it.mine){
+    modActions = `
+      <div class="info-box mod" style="margin-top:14px;">
+        <strong>🛡 Moderator-Aktionen</strong>
+        Du hast als VIP-Moderator erweiterte Rechte.
+      </div>
+      <button class="btn-mod" id="btnModRemove">🛡 Kiste sofort entfernen</button>
+      <button class="btn-mod" id="btnModWarn" style="margin-top:6px;">🛡 Nutzer verwarnen</button>
+    `;
+  }
+
+  sheet.innerHTML = `
+    <button class="modal-close" id="modalClose">✕</button>
+    ${photoHtml}
+    <div class="modal-body">
+      <h2>${escapeHtml(it.title)}</h2>
+      <div class="modal-meta">
+        <span class="meta-pill">${cat.emoji} ${cat.label}</span>
+        ${active && !banned ? `<span class="meta-pill">✓ Verifiziert</span>` : ''}
+        ${pending ? `<span class="meta-pill warn">⏳ ${verCount}/${VERIFICATIONS_NEEDED} Bestätigungen</span>` : ''}
+        ${banned ? `<span class="meta-pill danger">🚫 Deaktiviert</span>` : ''}
+        ${negCount > 0 && !banned ? `<span class="meta-pill warn">${negCount}× fehlend gemeldet</span>` : ''}
+        <span class="meta-pill">⏱ ${isExpired(it)?'abgelaufen':expiresIn(it.expiresAt)}</span>
+      </div>
+      ${it.desc ? `<p class="desc">${escapeHtml(it.desc)}</p>` : ''}
+      <div class="modal-row"><span>📍</span><strong>${escapeHtml(it.address || 'Standort unbekannt')}</strong></div>
+      <div class="modal-row"><span>👤</span> Geteilt von <strong>${escapeHtml(it.giver)}</strong></div>
+      <div class="modal-row"><span>🕒</span> ${timeAgo(it.createdAt)}</div>
+
+      ${actionButtons}
+
+      ${alreadyConfirmed && !active ? `
+        <div style="margin-top:14px;padding:12px;background:var(--bio-light);border-radius:12px;text-align:center;font-size:13px;color:var(--bio-leaf);font-weight:700;">
+          ✓ Du hast diese Kiste bereits bestätigt
+        </div>` : ''}
+
+      ${it.mine && pending ? `
+        <div style="margin-top:14px;padding:12px;background:#fdf0e0;border-radius:12px;font-size:12px;color:#8a6420;line-height:1.5;">
+          Deine Kiste wartet auf ${VERIFICATIONS_NEEDED - verCount} weitere Vor-Ort-Bestätigung${VERIFICATIONS_NEEDED - verCount === 1 ? '' : 'en'}.
+        </div>` : ''}
+
+      ${verifiersHtml}
+      ${negativeHtml}
+
+      ${modActions}
+
+      <div class="modal-actions ${it.mine ? 'single' : ''}">
+        <button class="btn-secondary" id="modalRoute">Route planen</button>
+        ${it.mine
+          ? `<button class="btn-danger" id="modalDelete">Löschen</button>`
+          : `<button class="btn-danger" id="modalReport">Inhalt melden</button>`}
+      </div>
+    </div>
+  `;
+
+  const modal = document.getElementById('modal');
+  modal.classList.add('open');
+
+  document.getElementById('modalClose').onclick = closeModal;
+  document.getElementById('modalRoute').onclick = () => openRoute(it.id);
+  document.getElementById('btnConfirm')?.addEventListener('click', () => confirmItem(it.id));
+  document.getElementById('btnNegReport')?.addEventListener('click', () => {
+    if(!confirm('Möchtest du wirklich melden, dass die Kiste nicht (mehr) da ist?\n\nBei 3 Meldungen innerhalb der ersten Stunde wird der Ersteller gesperrt.')) return;
+    negativeReportItem(it.id);
+  });
+  document.getElementById('modalDelete')?.addEventListener('click', () => {
+    if(confirm('Diese Kiste wirklich löschen?')){
+      state.items = state.items.filter(x => x.id !== it.id);
+      saveAll();
+      closeModal();
+      renderAll();
+      toast('Kiste gelöscht');
+    }
+  });
+  document.getElementById('modalReport')?.addEventListener('click', () => openReportSheet(it.id));
+
+  // Mod-Aktionen
+  document.getElementById('btnModRemove')?.addEventListener('click', () => {
+    if(!confirm(`Kiste "${it.title}" als Moderator sofort entfernen?`)) return;
+    it.bannedAt = Date.now();
+    it.bannedByMod = state.user.name;
+    it.bannedReason = 'Moderator-Entscheidung';
+    saveAll();
+    // Owner markieren
+    flagUser(it.ownerId, it.giver, `Kiste moderativ entfernt: ${it.title}`);
+    closeModal();
+    renderAll();
+    toast('Kiste als Moderator entfernt ✓');
+  });
+  document.getElementById('btnModWarn')?.addEventListener('click', () => {
+    const reason = prompt('Grund für die Verwarnung:', 'Verstoß gegen Community-Regeln');
+    if(!reason) return;
+    flagUser(it.ownerId, it.giver, reason);
+    toast('Nutzer verwarnt und markiert ✓');
+    closeModal();
+    renderAll();
+  });
+
+  modal.onclick = e => { if(e.target === modal) closeModal(); };
+}
+
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+
+/* =====================================================
+   MELDESYSTEM
+   ===================================================== */
+function openReportSheet(itemId){
+  const sheet = document.getElementById('modalSheet');
+  sheet.innerHTML = `
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-body">
+      <h2>Inhalt melden</h2>
+      <p style="font-size:13px;color:var(--bio-muted);margin-bottom:14px;line-height:1.5;">
+        Bei schweren Verstößen wird der Inhalt sofort entfernt. Bei „Kiste nicht vorhanden" nutze bitte die Schaltfläche in der Detailansicht.
+      </p>
+      <div id="reportReasons">
+        ${REPORT_REASONS.map(r => `
+          <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid #e3efe6;border-radius:12px;margin-bottom:8px;cursor:pointer;font-size:13px;">
+            <input type="radio" name="reportReason" value="${escapeHtml(r)}">
+            <span>${escapeHtml(r)}</span>
+          </label>`).join('')}
+      </div>
+      <button class="btn-primary" id="btnReportSubmit" style="margin-top:10px;">Meldung absenden</button>
+      <button class="btn-secondary" id="btnReportCancel" style="width:100%;margin-top:8px;">Abbrechen</button>
+    </div>
+  `;
+
+  const modal = document.getElementById('modal');
+  modal.classList.add('open');
+  document.getElementById('modalClose').onclick = closeModal;
+  document.getElementById('btnReportCancel').onclick = closeModal;
+  document.getElementById('btnReportSubmit').onclick = () => {
+    const sel = sheet.querySelector('input[name="reportReason"]:checked');
+    if(!sel){ toast('Bitte einen Grund wählen', true); return; }
+    const reason = sel.value;
+    state.reports.push({
+      id: uid(),
+      itemId,
+      reporterId: state.user.uid,
+      reason,
+      createdAt: Date.now(),
+    });
+
+    const severe = ['Anstößiger oder illegaler Inhalt', 'Persönlichkeitsrechtsverletzung'].includes(reason);
+    if(severe){
+      state.items = state.items.filter(x => x.id !== itemId);
+      toast('Inhalt gemeldet und entfernt.');
+    } else {
+      toast('Meldung eingegangen. Wir prüfen den Inhalt.');
+    }
+    saveAll();
+    closeModal();
+    renderAll();
+  };
+  modal.onclick = e => { if(e.target === modal) closeModal(); };
+}
+
+/* =====================================================
+   RANGLISTE / VIP-UI
+   ===================================================== */
+function renderRanking(){
+  const el = document.getElementById('rankingContent');
+  if(!state.user){
+    el.innerHTML = '<div class="empty"><span class="emo">🏆</span><strong>Bitte anmelden</strong></div>';
+    return;
+  }
+
+  const cityKey = state.user.cityKey || 'default';
+  const cityName = getCityName(cityKey);
+  const board = computeCityLeaderboard(cityKey);
+  const slots = computeVipSlots(cityKey);
+  const totalCityUsers = Object.values(getUsers()).filter(u => (u.cityKey || 'default') === cityKey).length;
+
+  const myIndex = board.findIndex(x => x.user.uid === state.user.uid);
+
+  let html = `
+    <div class="section-title" style="margin-top:14px;">
+      ${escapeHtml(cityName)} · ${totalCityUsers} Nutzer · ${slots} VIP-Platz${slots===1?'':'e'}
+    </div>`;
+
+  if(state.user.isVip){
+    html += `
+      <div class="vip-code-box">
+        <div class="label">🎉 Dein VIP-Vorteil</div>
+        <div class="code">${escapeHtml(state.user.vipCode)}</div>
+        <div class="expires">Gratis-Abo bis ${new Date(state.user.vipUntil).toLocaleDateString('de-DE')}</div>
+        <button onclick="copyVipCode()">Code kopieren</button>
+      </div>`;
+  }
+
+  if(board.length === 0){
+    html += `
+      <div class="empty">
+        <span class="emo">⭐</span>
+        <strong>Noch keine Aktivität im Vormonat</strong>
+        Sammle ${VIP_MIN_ACTIVITY_POINTS}+ Punkte, um in die Rangliste zu kommen.
+      </div>`;
+    el.innerHTML = html;
+    return;
+  }
+
+  board.forEach((entry, idx) => {
+    const u = entry.user;
+    const isMe = u.uid === state.user.uid;
+    const isVipSlot = idx < slots;
+    const posClass = idx === 0 ? 'top1' : idx === 1 ? 'top2' : idx === 2 ? 'top3' : '';
+    const posIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx+1);
+    const avatarContent = u.logo
+      ? `<img src="${u.logo}" alt="">`
+      : escapeHtml(u.initials || makeInitials(u.name));
+
+    html += `
+      <div class="rank-row ${isMe?'me':''} ${isVipSlot?'vip':''}">
+        <div class="rank-pos ${posClass}">${posIcon}</div>
+        <div class="rank-avatar">${avatarContent}</div>
+        <div class="rank-info">
+          <div class="rank-name">
+            ${escapeHtml(u.name)}${isMe ? ' <span style="color:var(--bio-leaf);font-size:10px;">(du)</span>' : ''}
+            ${isVipSlot ? '<span class="vip-badge">★ VIP</span>' : ''}
+            ${u.isVip && u.vipUntil > Date.now() ? '<span class="mod-badge">🛡 MOD</span>' : ''}
+          </div>
+          <div class="rank-sub">
+            ${entry.points} Punkte im Vormonat · ${entry.pointsThisMonth} diesen Monat
+          </div>
+        </div>
+        <div class="rank-points">${entry.points}</div>
+      </div>`;
+  });
+
+  if(myIndex === -1){
+    html += `
+      <div class="info-box" style="margin-top:12px;">
+        <strong>Deine Position</strong>
+        Du bist noch nicht in den Top ${slots}. Sammle mindestens ${VIP_MIN_ACTIVITY_POINTS} Punkte im Vormonat, um aufzusteigen.
+      </div>`;
+  } else {
+    html += `
+      <div class="info-box" style="margin-top:12px;">
+        <strong>Deine Position: ${myIndex+1} von ${board.length}</strong>
+        ${myIndex < slots
+          ? '🎉 Du bist in der VIP-Zone!'
+          : `Noch ${myIndex + 1 - slots} Plätze bis zur VIP-Zone.`}
+      </div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+function copyVipCode(){
+  if(!state.user?.vipCode) return;
+  const code = state.user.vipCode;
+  if(navigator.clipboard?.writeText){
+    navigator.clipboard.writeText(code).then(() => toast('Code kopiert ✓'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = code; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    ta.remove();
+    toast('Code kopiert ✓');
+  }
+}
+window.copyVipCode = copyVipCode;
+
+/* =====================================================
+   MODERATOR-DASHBOARD
+   ===================================================== */
+function renderModerator(){
+  const el = document.getElementById('moderatorContent');
+  if(!state.user){
+    el.innerHTML = '<div class="empty">Bitte anmelden.</div>';
+    return;
+  }
+  if(!isModerator(state.user)){
+    el.innerHTML = `
+      <div class="empty">
+        <span class="emo">🛡</span>
+        <strong>Kein Zugriff</strong>
+        Nur VIP-Moderatoren können dieses Dashboard öffnen. Werde in den Top 10 % deiner Stadt aktiv.
+      </div>`;
+    return;
+  }
+
+  const cityKey = state.user.cityKey || 'default';
+  const cityName = getCityName(cityKey);
+  const escalations = getEscalations().filter(e => {
+    if(e.status !== 'open') return false;
+    // Nur Eskalationen der eigenen Stadt
+    const item = state.items.find(i => i.id === e.itemId);
+    if(!item) return true; // Kein Item mehr → zeig es trotzdem
+    const itemCity = normalizeCityKey(item.address || '');
+    return itemCity === cityKey || itemCity === 'default';
+  });
+
+  const flagged = getFlaggedUsers().filter(f => f.active);
+
+  const pendingItems = state.items.filter(it => !isItemActive(it) && !isItemBanned(it) && !isExpired(it));
+  const negReported = state.items.filter(it => getNegativeReports(it).length > 0 && !isItemBanned(it));
+
+  let html = `
+    <div class="mod-header">
+      <h3>🛡 Moderator-Dashboard</h3>
+      <p>${escapeHtml(cityName)} · Du bist einer der Top-10 %-Moderatoren. Danke für deinen Einsatz!</p>
+    </div>
+
+    <div class="mod-stat-grid">
+      <div class="mod-stat">
+        <div class="n">${escalations.length}</div>
+        <div class="l">Eskalationen</div>
+      </div>
+      <div class="mod-stat">
+        <div class="n">${flagged.length}</div>
+        <div class="l">Markiert</div>
+      </div>
+      <div class="mod-stat">
+        <div class="n">${negReported.length}</div>
+        <div class="l">Neg. Reports</div>
+      </div>
+    </div>
+
+    <div class="mod-tabs">
+      <div class="mod-tab ${state.modTab==='escalations'?'active':''}" data-tab="escalations">🚨 Eskalationen (${escalations.length})</div>
+      <div class="mod-tab ${state.modTab==='flagged'?'active':''}" data-tab="flagged">⚠️ Markierte Nutzer (${flagged.length})</div>
+      <div class="mod-tab ${state.modTab==='items'?'active':''}" data-tab="items">📦 Zu prüfen (${negReported.length})</div>
+    </div>
+  `;
+
+  if(state.modTab === 'escalations'){
+    if(escalations.length === 0){
+      html += `<div class="info-box"><strong>✓ Keine offenen Eskalationen</strong>Alles sauber in deiner Stadt.</div>`;
+    } else {
+      escalations.forEach(esc => {
+        html += `
+          <div class="escalation-card" data-esc="${esc.id}">
+            <h4>${escapeHtml(esc.itemTitle)}</h4>
+            <div class="meta">
+              📍 ${escapeHtml(esc.itemAddress || 'unbekannt')} · ${timeAgo(esc.createdAt)}<br>
+              👤 Ersteller: ${escapeHtml(esc.ownerName)} · ${esc.reporterCount} Meldungen
+            </div>
+            <div style="font-size:11px;color:var(--bio-muted);line-height:1.5;">
+              Mindestens ein Reporter stand an eigener Adresse – Verdacht auf schnelle Entnahme durch Dritte.
+            </div>
+            <div class="actions">
+              <button class="approve" data-esc-approve="${esc.id}">✓ Kiste erhalten</button>
+              <button class="reject" data-esc-reject="${esc.id}">✕ Kiste entfernen</button>
+            </div>
+          </div>`;
+      });
+    }
+  }
+
+  if(state.modTab === 'flagged'){
+    if(flagged.length === 0){
+      html += `<div class="info-box"><strong>✓ Keine markierten Nutzer</strong>In deiner Stadt ist alles ruhig.</div>`;
+    } else {
+      flagged.forEach(f => {
+        html += `
+          <div class="flagged-user-row">
+            <div class="u-avatar">${escapeHtml(makeInitials(f.name))}</div>
+            <div class="u-info">
+              <div class="u-name">${escapeHtml(f.name)}</div>
+              <div class="u-reason">${escapeHtml(f.reason)} · ${timeAgo(f.flaggedAt)}</div>
+            </div>
+            <button data-unflag="${f.id}">Freigeben</button>
+          </div>`;
+      });
+    }
+  }
+
+  if(state.modTab === 'items'){
+    if(negReported.length === 0){
+      html += `<div class="info-box"><strong>✓ Keine verdächtigen Kisten</strong></div>`;
+    } else {
+      negReported.forEach(it => {
+        html += `
+          <div class="escalation-card" style="border-left-color:var(--bio-accent);">
+            <h4>${escapeHtml(it.title)}</h4>
+            <div class="meta">
+              📍 ${escapeHtml(it.address || 'unbekannt')} · ${getNegativeReports(it).length}× fehlend gemeldet
+            </div>
+            <div class="actions">
+              <button class="approve" data-item-keep="${it.id}">✓ Kiste bleibt</button>
+              <button class="reject" data-item-remove="${it.id}">✕ Kiste entfernen</button>
+            </div>
+          </div>`;
+      });
+    }
+  }
+
+  el.innerHTML = html;
+
+  // Tab-Handler
+  el.querySelectorAll('.mod-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      state.modTab = tab.dataset.tab;
+      renderModerator();
+    });
+  });
+
+  // Eskalation: Kiste erhalten
+  el.querySelectorAll('[data-esc-approve]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const escId = btn.dataset.escApprove;
+      const escs = getEscalations();
+      const esc = escs.find(e => e.id === escId);
+      if(esc){ esc.status = 'approved'; saveEscalations(escs); }
+      toast('Kiste bleibt erhalten ✓');
+      renderModerator();
+    });
+  });
+
+  // Eskalation: Kiste entfernen
+  el.querySelectorAll('[data-esc-reject]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const escId = btn.dataset.escReject;
+      const escs = getEscalations();
+      const esc = escs.find(e => e.id === escId);
+      if(esc){
+        esc.status = 'rejected';
+        saveEscalations(escs);
+        const item = state.items.find(i => i.id === esc.itemId);
+        if(item){
+          item.bannedAt = Date.now();
+          item.bannedByMod = state.user.name;
+          item.bannedReason = 'Mod-Entscheidung nach Eskalation';
+          flagUser(item.ownerId, item.giver, `Kiste entfernt nach Eskalation: ${item.title}`);
+          saveAll();
+        }
+      }
+      toast('Kiste wurde entfernt');
+      renderModerator();
+      renderAll();
+    });
+  });
+
+  // Nutzer freigeben
+  el.querySelectorAll('[data-unflag]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.unflag;
+      const flagged = getFlaggedUsers();
+      const f = flagged.find(x => x.id === id);
+      if(f){ f.active = false; saveFlaggedUsers(flagged); }
+      toast('Nutzer freigegeben');
+      renderModerator();
+    });
+  });
+
+  // Items: behalten / entfernen
+  el.querySelectorAll('[data-item-keep]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const itemId = btn.dataset.itemKeep;
+      const item = state.items.find(i => i.id === itemId);
+      if(item){ item.negativeReports = []; saveAll(); }
+      toast('Meldungen zurückgesetzt');
+      renderModerator();
+      renderAll();
+    });
+  });
+  el.querySelectorAll('[data-item-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const itemId = btn.dataset.itemRemove;
+      const item = state.items.find(i => i.id === itemId);
+      if(item){
+        item.bannedAt = Date.now();
+        item.bannedByMod = state.user.name;
+        item.bannedReason = 'Mod-Entscheidung';
+        flagUser(item.ownerId, item.giver, `Kiste entfernt: ${item.title}`);
+        saveAll();
+      }
+      toast('Kiste entfernt');
+      renderModerator();
+      renderAll();
+    });
+  });
+}
+
+/* =====================================================
+   KARTE
+   ===================================================== */
+let map = null, markersLayer = null, userMarker = null;
+
+function initMap(){
+  if(map) return;
+  map = L.map('map', { zoomControl:false, attributionControl:false })
+    .setView([DEFAULT_LOC.lat, DEFAULT_LOC.lng], 15);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, subdomains: 'abcd',
+  }).addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
+}
+
+function updateMap(){
+  initMap();
+  const center = [DEFAULT_LOC.lat, DEFAULT_LOC.lng];
+  map.setView(center, 15);
+  markersLayer.clearLayers();
+  if(userMarker){ map.removeLayer(userMarker); userMarker = null; }
+
+  const userIcon = L.divIcon({
+    className: '',
+    html: '<div class="user-marker" style="width:18px;height:18px;"></div>',
+    iconSize: [18,18], iconAnchor: [9,9],
+  });
+  userMarker = L.marker(center, { icon: userIcon }).addTo(map);
+
+  state.items.filter(it => !isExpired(it) && isItemActive(it) && !isItemBanned(it)).forEach(it => {
+    const cat = CATEGORIES[it.category] || CATEGORIES.other;
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:32px;height:32px;border-radius:50%;background:${cat.color};color:#fff;
+        display:flex;align-items:center;justify-content:center;font-size:16px;
+        box-shadow:0 3px 10px rgba(0,0,0,.28);border:2px solid #fff;">${cat.emoji}</div>`,
+      iconSize: [32,32], iconAnchor: [16,16],
+    });
+    const marker = L.marker([it.lat, it.lng], { icon }).addTo(markersLayer);
+    marker.bindPopup(`
+      <div class="popup-title">${escapeHtml(it.title)}</div>
+      <div class="popup-cat">${cat.emoji} ${cat.label} · ✓ Verifiziert</div>
+      <div class="popup-loc">📍 ${escapeHtml(it.address || '')}</div>
+    `);
+  });
+  setTimeout(() => map.invalidateSize(), 100);
+}
+
+/* =====================================================
+   VIEW-WECHSEL
+   ===================================================== */
+function switchView(name){
+  state.view = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.view === name);
+  });
+  const fab = document.getElementById('fab');
+  fab.classList.toggle('hidden', !(name === 'feed' || name === 'mine'));
+  document.getElementById('appHeader').classList.toggle('compact', name !== 'feed');
+  if(name === 'map') setTimeout(updateMap, 50);
+  if(name === 'mine') renderMine();
+  if(name === 'profile') renderProfile();
+  if(name === 'feed') renderFeed();
+  if(name === 'share') renderBanBanner();
+  if(name === 'ranking') renderRanking();
+  if(name === 'moderator') renderModerator();
+}
+
+/* =====================================================
+   FORMULAR
+   ===================================================== */
+function initForm(){
+  const picker = document.getElementById('catPicker');
+  picker.innerHTML = Object.entries(CATEGORIES).map(([k,v]) =>
+    `<div class="cat-opt ${state.draft.category===k?'selected':''}" data-cat="${k}">${v.emoji} ${v.label}</div>`
+  ).join('');
+  picker.querySelectorAll('.cat-opt').forEach(el => {
+    el.addEventListener('click', () => {
+      state.draft.category = el.dataset.cat;
+      picker.querySelectorAll('.cat-opt').forEach(x => x.classList.toggle('selected', x === el));
+    });
+  });
+
+  const dur = document.getElementById('durPicker');
+  dur.querySelectorAll('.dur-opt').forEach(el => {
+    el.addEventListener('click', () => {
+      state.draft.duration = parseInt(el.dataset.h, 10);
+      dur.querySelectorAll('.dur-opt').forEach(x => x.classList.toggle('selected', x === el));
+    });
+  });
+
+  const photoInput = document.getElementById('photoInput');
+  const photoFile = document.getElementById('photoFile');
+  const photoPreview = document.getElementById('photoPreview');
+  const photoPlaceholder = document.getElementById('photoPlaceholder');
+
+  photoInput.addEventListener('click', () => {
+    if(isUserBanned(state.user)){ toast('Du bist gesperrt und kannst keine Fotos hochladen', true); return; }
+    photoFile.click();
+  });
+
+  photoFile.addEventListener('change', async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+    try{
+      const dataUrl = await compressImage(file);
+      state.draft.photo = dataUrl;
+      photoPreview.src = dataUrl;
+      photoPreview.style.display = 'block';
+      photoPlaceholder.style.display = 'none';
+      photoInput.classList.add('has-photo');
+    }catch(err){ toast('Foto konnte nicht geladen werden', true); }
+  });
+
+  document.getElementById('btnLocate').addEventListener('click', async function(){
+    const btn = this;
+    btn.classList.add('loading');
+    btn.textContent = '…';
+    try{
+      const pos = await getEffectivePosition();
+      state.draft.lat = pos.lat;
+      state.draft.lng = pos.lng;
+      toast('Standort gesetzt 📍');
+      const addr = document.getElementById('fAddr');
+      if(!addr.value) addr.value = 'Aktueller Standort';
+    }catch(err){
+      toast('Standort nicht verfügbar', true);
+    } finally {
+      btn.classList.remove('loading');
+      btn.textContent = '📍';
+    }
+  });
+
+  document.getElementById('btnSubmit').addEventListener('click', submitItem);
+}
+
+function submitItem(){
+  if(!state.user){ toast('Bitte zuerst anmelden', true); return; }
+
+  if(isUserBanned(state.user)){
+    const remain = formatBanRemaining(getBanRemainingMs(state.user));
+    toast(`Du bist noch ${remain} gesperrt. Kein Upload möglich.`, true);
+    return;
+  }
+
+  const activeMine = state.items.filter(it => it.mine && !isExpired(it) && !isItemBanned(it));
+  if(activeMine.length >= MAX_ITEMS){
+    toast(`Maximal ${MAX_ITEMS} aktive Kisten pro Nutzer.`, true);
+    return;
+  }
+
+  const title = document.getElementById('fTitle').value.trim();
+  const desc  = document.getElementById('fDesc').value.trim();
+  const addr  = document.getElementById('fAddr').value.trim();
+
+  if(!title){ toast('Bitte einen Titel angeben', true); return; }
+  if(!addr && !state.draft.lat){ toast('Bitte einen Standort angeben', true); return; }
+
+  const lat = state.draft.lat || (DEFAULT_LOC.lat + (Math.random()-0.5)*0.004);
+  const lng = state.draft.lng || (DEFAULT_LOC.lng + (Math.random()-0.5)*0.004);
+
+  const item = {
+    id: uid(),
+    title, category: state.draft.category, desc,
+    emoji: null, photo: state.draft.photo,
+    lat, lng, address: addr || 'Aktueller Standort',
+    giver: state.user.name,
+    giverInitials: state.user.initials,
+    giverLogo: state.user.logo,
+    giverTrust: getTrustLevel(state.user.points || 0).badge,
+    mine: true, ownerId: state.user.uid,
+    createdAt: Date.now(),
+    expiresAt: Date.now() + state.draft.duration * 3600000,
+    verifications: [],
+    negativeReports: [],
+    bannedAt: 0,
+    flaggedForSupport: false,
+  };
+
+  state.items.push(item);
+  saveAll();
+
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fDesc').value = '';
+  document.getElementById('fAddr').value = '';
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('photoPreview').src = '';
+  document.getElementById('photoPlaceholder').style.display = 'flex';
+  document.getElementById('photoInput').classList.remove('has-photo');
+  state.draft.photo = null;
+  state.draft.lat = null;
+  state.draft.lng = null;
+
+  toast('Kiste geteilt! Wartet auf 3 Vor-Ort-Bestätigungen 🌱');
+  renderAll();
+  switchView('feed');
+}
+
+/* =====================================================
+   RECHTLICHE SEITEN
+   ===================================================== */
+const LEGAL_CONTENT = {
+  impressum: `<h2>Impressum</h2>
+    <p>Angaben gemäß § 5 DDG</p>
+    <p><strong>[DEIN VOLLSTÄNDIGER NAME]</strong><br>
+    [STRASSE UND HAUSNUMMER]<br>
+    [PLZ ORT]<br>Deutschland</p>
+    <p>E-Mail: [DEINE E-MAIL]<br>Telefon: [DEINE TELEFONNUMMER]</p>
+    <p>Umsatzsteuer-ID gemäß § 27a UStG: [DEINE UST-ID]</p>
+    <p>Verantwortlich für den Inhalt: [DEIN NAME]</p>`,
+
+  datenschutz: `<h2>Datenschutzerklärung</h2>
+    <h3>1. Verantwortlicher</h3>
+    <p>[DEIN NAME, ADRESSE, E-MAIL]</p>
+    <h3>2. Erhobene Daten</h3>
+    <p>E-Mail, Profilname, Profilbild, <strong>GPS-Standortdaten</strong>, Fotos, Bewertungen, Vertrauenspunkte, Stadt.</p>
+    <h3>3. Zweck</h3>
+    <p>App-Funktionen, Missbrauchsprävention durch GPS-Verifizierung, VIP-/Moderator-Berechnung, Vertragserfüllung.</p>
+    <h3>4. Rechtsgrundlage</h3>
+    <p>Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und lit. f DSGVO (berechtigtes Interesse).</p>
+    <h3>5. Speicherdauer</h3>
+    <p>Fotos werden nach Ablauf automatisch gelöscht. GPS-Daten werden nur zur Verifikation gespeichert.</p>
+    <h3>6. Weitergabe</h3>
+    <p>Hosting-Dienstleister, Zahlungsdienstleister (Play Store).</p>
+    <h3>7. Ihre Rechte</h3>
+    <p>Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch, Datenübertragbarkeit.</p>`,
+
+  agb: `<h2>Allgemeine Geschäftsbedingungen</h2>
+    <h3>1. Vertragsgegenstand</h3>
+    <p>KISTE ist eine Plattform zur kostenlosen Weitergabe von Gegenständen in der Nachbarschaft.</p>
+    <h3>2. Community-Verifizierung mit GPS</h3>
+    <p>Neue Fotos werden erst nach 3 Vor-Ort-Bestätigungen sichtbar. Bestätigungen sind nur im Umkreis von ${GPS_CONFIRM_RADIUS_M} m möglich.</p>
+    <h3>3. Sperrung bei Missbrauch</h3>
+    <p>Bei 3 unabhängigen Meldungen „Kiste nicht vorhanden" innerhalb der ersten Stunde wird der Ersteller für 24 Stunden gesperrt. Ist die Kiste an der eigenen Adresse des Melders, wird der Fall an den Support eskaliert.</p>
+    <h3>4. VIP-Status und Moderation</h3>
+    <p>Die aktivsten 10 % der Nutzer pro Stadt werden monatlich zu VIP-Moderatoren ernannt. Sie erhalten einen Gratis-Abo-Code für den Folgemonat und erweiterte Moderationsrechte. Missbrauch führt zum sofortigen Verlust.</p>
+    <h3>5. Preis</h3>
+    <p>9,99 € pro Monat inkl. 19 % MwSt., monatlich kündbar.</p>
+    <h3>6. Widerrufsrecht</h3>
+    <p>Es gilt ein 14-tägiges Widerrufsrecht. Details siehe Widerrufsbelehrung.</p>
+    <h3>7. Haftung</h3>
+    <p>Die Plattform haftet nicht für die Richtigkeit der Angebote. Nutzer haften für ihre Inhalte.</p>
+    <h3>8. Kündigung</h3>
+    <p>Monatlich zum Laufzeitende. Account-Löschung jederzeit möglich.</p>`,
+
+  widerruf: `<h2>Widerrufsbelehrung</h2>
+    <p>Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsschlusses.</p>
+    <p>Um Ihr Widerrufsrecht auszuüben, kontaktieren Sie uns unter [DEINE E-MAIL].</p>
+    <p><strong>Hinweis:</strong> Das Widerrufsrecht erlischt nicht vorzeitig durch die Nutzung des Dienstes.</p>
+    <h3>Muster-Widerrufsformular</h3>
+    <p>Hiermit widerrufe ich den von mir abgeschlossenen Vertrag über die Nutzung der App KISTE.</p>
+    <p>Bestellt am: _______________<br>Name: _______________<br>Anschrift: _______________<br>Datum: _______________</p>`,
+};
+
+function showLegal(section){
+  const content = LEGAL_CONTENT[section];
+  if(!content) return;
+  document.getElementById('legalContent').innerHTML = content;
+  switchView('legal');
+}
+window.showLegal = showLegal;
+
+function showTrustInfo(){
+  document.getElementById('legalContent').innerHTML = `
+    <h2>Vertrauensstufen</h2>
+    <h3>🌱 Neuling (0–49 Punkte)</h3>
+    <p>Startstufe. Du kannst Kisten posten und bestätigen.</p>
+    <h3>✓ Vertrauenswürdig (50–149 Punkte)</h3>
+    <p>Deine Bestätigungen werden besonders hervorgehoben.</p>
+    <h3>⭐ Erfahren (150–399 Punkte)</h3>
+    <p>Deine Kisten werden bevorzugt angezeigt.</p>
+    <h3>🏆 Botschafter (ab 400 Punkte)</h3>
+    <p>Höchste Stufe.</p>
+
+    <h2>VIP & Moderator</h2>
+    <p>Die aktivsten <b>10 % pro Stadt</b> werden monatlich automatisch zu <b>VIP-Moderatoren</b> ernannt:</p>
+    <ul>
+      <li>Gratis-Abo-Code für den Folgemonat</li>
+      <li>Erweiterte Moderationsrechte (Kisten entfernen, Nutzer verwarnen)</li>
+      <li>Zugang zum Moderator-Dashboard mit Eskalationen</li>
+      <li>Goldenes VIP-Badge im Profil</li>
+    </ul>
+
+    <h2>So sammelst du Punkte</h2>
+    <ul>
+      <li><strong>+${POINTS_CONFIRM}</strong> für Vor-Ort-Bestätigung</li>
+      <li><strong>+${POINTS_ACTIVATOR_BONUS} Bonus</strong> als 3. Bestätiger (Aktivierer)</li>
+      <li><strong>+${POINTS_POST_VERIFIED}</strong> wenn eigene Kiste aktiviert wird</li>
+      <li><strong>+${POINTS_NEGATIVE_CONFIRM}</strong> für ehrliche „Kiste fehlt"-Meldung</li>
+      <li><strong>${POINTS_FALSE_REPORT}</strong> bei falscher Bestätigung</li>
+    </ul>
+
+    <h2>GPS-Regeln</h2>
+    <p>Bestätigungen nur im Umkreis von <b>${GPS_CONFIRM_RADIUS_M} m</b> um die Kiste.</p>
+
+    <h2>Sperre</h2>
+    <p>Bei ${NEGATIVE_REPORTS_FOR_BAN} „Kiste nicht vorhanden"-Meldungen in der ersten Stunde → Sperre für ${BAN_DURATION_MS / 3600000} Std.</p>
+  `;
+  switchView('legal');
+}
+
+/* =====================================================
+   Render All
+   ===================================================== */
+function renderAll(){
+  renderFeed();
+  renderMine();
+  renderProfile();
+  renderLogo();
+  if(state.view === 'map') updateMap();
+  if(state.view === 'share') renderBanBanner();
+  if(state.view === 'ranking') renderRanking();
+  if(state.view === 'moderator') renderModerator();
+}
+
+function cleanupExpired(){
+  const before = state.items.length;
+  state.items = state.items.filter(it => !isExpired(it) || it.mine);
+  if(state.items.length !== before){
+    saveAll();
+    renderAll();
+  }
+}
+
+/* =====================================================
+   Stadt / Adresse bearbeiten
+   ===================================================== */
+function updateCityMenuFromRender(){
+  updateCityMenu();
+}
+
+function editCity(){
+  const current = state.user?.city || '';
+  const c = prompt('In welcher Stadt bist du aktiv? (z. B. Freiburg, Stuttgart)', current);
+  if(c === null) return;
+  const city = c.trim().slice(0,60);
+  const key = normalizeCityKey(city);
+  updateCurrentUser({
+    city: city || getCityName(key),
+    cityKey: key,
+  });
+  seedCityDemoUsers();
+  updateVipStatusForCity(key);
+  renderAll();
+  toast(`Stadt gesetzt: ${getCityName(key)}`);
+}
+
+function editHomeAddress(){
+  const a = prompt('Deine eigene Adresse (für Ausnahme bei „Kiste fehlt"-Meldungen):', state.user?.homeAddress || '');
+  if(a === null) return;
+  updateCurrentUser({ homeAddress: a.trim() });
+  renderAll();
+  toast(a.trim() ? 'Adresse gespeichert' : 'Adresse entfernt');
+}
+
+/* =====================================================
+   INIT
+   ===================================================== */
+function initApp(){
+  renderChips();
+
+  // Stadt ableiten beim ersten Start
+  if(state.user && !state.user.cityKey){
+    const guessedKey = state.user.homeAddress
+      ? normalizeCityKey(state.user.homeAddress)
+      : 'default';
+    updateCurrentUser({
+      city: state.user.city || getCityName(guessedKey),
+      cityKey: guessedKey,
+    });
+  }
+  if(state.user?.cityKey && state.user.cityKey !== 'default'){
+    seedCityDemoUsers();
+    updateVipStatusForCity(state.user.cityKey);
+  }
+  runVipCycleIfDue();
+
+  renderAll();
+  setInterval(cleanupExpired, 60000);
+  cleanupExpired();
+
+  // Moderator-Nav-Eintrag einblenden, wenn Mod
+  updateModeratorNav();
+}
+
+function updateModeratorNav(){
+  const nav = document.getElementById('bottomNav');
+  const existing = nav.querySelector('[data-view="moderator"]');
+  if(isModerator(state.user)){
+    if(!existing){
+      const el = document.createElement('div');
+      el.className = 'nav-item';
+      el.dataset.view = 'moderator';
+      el.innerHTML = '<span class="ico">🛡</span><span>Mod</span>';
+      el.addEventListener('click', () => switchView('moderator'));
+      nav.appendChild(el);
+    }
+  } else {
+    if(existing) existing.remove();
+    if(state.view === 'moderator') switchView('feed');
+  }
+}
+
+function init(){
+  initForm();
+
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.addEventListener('click', () => switchView(n.dataset.view));
+  });
+  document.getElementById('fab').addEventListener('click', () => {
+    if(isUserBanned(state.user)){
+      toast('Du bist gesperrt und kannst keine Fotos hochladen', true);
+      return;
+    }
+    switchView('share');
+  });
+  document.getElementById('searchInput').addEventListener('input', e => {
+    state.search = e.target.value;
+    renderFeed();
+  });
+
+  document.getElementById('menuName').addEventListener('click', () => {
+    const n = prompt('Wie sollen dich andere sehen?', state.user?.name || '');
+    if(n && n.trim()){
+      const name = n.trim().slice(0,30);
+      updateCurrentUser({ name, initials: makeInitials(name) });
+      renderAll();
+      toast('Name aktualisiert');
+    }
+  });
+  document.getElementById('menuLogo').addEventListener('click', () => {
+    document.getElementById('logoFile').click();
+  });
+  document.getElementById('menuCity').addEventListener('click', editCity);
+  document.getElementById('menuHomeAddress').addEventListener('click', editHomeAddress);
+  document.getElementById('menuTrustInfo').addEventListener('click', showTrustInfo);
+  document.getElementById('menuClear').addEventListener('click', () => {
+    if(!confirm('Alle deine eigenen Kisten löschen?')) return;
+    state.items = state.items.filter(it => !it.mine);
+    saveAll();
+    renderAll();
+    toast('Eigene Kisten gelöscht');
+  });
+  document.getElementById('menuLogout').addEventListener('click', logout);
+
+  document.getElementById('logoFile').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+    try{
+      const dataUrl = await compressLogo(file, 256);
+      updateCurrentUser({ logo: dataUrl });
+      renderAll();
+      toast('Logo gespeichert ✨');
+    }catch(err){ toast('Logo konnte nicht geladen werden', true); }
+  });
+
+  if(lsGet(LS_ITEMS, null) === null){
+    state.items = seedDemoItems();
+  } else {
+    state.items = lsGet(LS_ITEMS, []);
+  }
+  state.reports = lsGet(LS_REPORTS, []);
+  saveAll();
+
+  const session = getSession();
+  if(session){
+    const u = findUserByUid(session.uid);
+    if(u){
+      state.user = u;
+      authOverlay.classList.remove('show');
+      initApp();
+      switchView('feed');
+      return;
+    }
+  }
+  showAuth();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
