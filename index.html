@@ -58,44 +58,21 @@
   .brand small{display:block;font-size:9px;letter-spacing:3px;font-weight:400;color:var(--bio-mint);margin-top:3px;}
   .tagline{margin-top:14px;font-size:12.5px;color:#d7ecdb;line-height:1.5;max-width:280px;position:relative;z-index:1;}
 
-  /* ===== Zurück-Button in der Header-Leiste ===== */
   .header-back-btn{
-    position:absolute;
-    top:22px;
-    right:22px;
-    width:42px;
-    height:42px;
-    border-radius:50%;
-    background:rgba(255,255,255,.18);
-    border:1.5px solid rgba(255,255,255,.35);
-    color:#fff;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    z-index:5;
-    font-size:20px;
-    font-family:inherit;
+    position:absolute;top:22px;right:22px;width:42px;height:42px;
+    border-radius:50%;background:rgba(255,255,255,.18);
+    border:1.5px solid rgba(255,255,255,.35);color:#fff;
+    display:none;align-items:center;justify-content:center;
+    cursor:pointer;z-index:5;font-size:20px;font-family:inherit;
     transition:background .15s, transform .15s;
-    backdrop-filter:blur(6px);
-    padding:0;
+    backdrop-filter:blur(6px);padding:0;
   }
-  .header-back-btn:active{
-    transform:scale(.92);
-    background:rgba(255,255,255,.3);
-  }
+  .header-back-btn:active{transform:scale(.92);background:rgba(255,255,255,.3);}
   .header-back-btn.show{ display:flex; }
-  .header.compact .header-back-btn{
-    top:14px;
-    right:22px;
-  }
+  .header.compact .header-back-btn{ top:14px; right:22px; }
   @media (max-width:480px){
-    .header-back-btn{
-      top:calc(22px + env(safe-area-inset-top, 0px));
-    }
-    .header.compact .header-back-btn{
-      top:calc(14px + env(safe-area-inset-top, 0px));
-    }
+    .header-back-btn{ top:calc(22px + env(safe-area-inset-top, 0px)); }
+    .header.compact .header-back-btn{ top:calc(14px + env(safe-area-inset-top, 0px)); }
   }
 
   .views{flex:1 1 auto;position:relative;overflow:hidden;}
@@ -231,10 +208,17 @@
   .empty .emo{font-size:44px;display:block;margin-bottom:10px;opacity:.7;}
   .empty strong{display:block;color:var(--bio-text);font-size:14px;margin-bottom:6px;}
 
+  /* ===== Leaflet / OpenStreetMap ===== */
   #map{width:100%;height:100%;background:var(--bio-light);}
   .leaflet-container{font-family:inherit;background:#e6f3e9;}
   .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:0 4px 16px rgba(31,58,42,.2);}
   .leaflet-popup-content{margin:12px 14px;font-size:12px;min-width:160px;}
+  .leaflet-popup-tip{background:#fff;}
+  .leaflet-control-attribution{
+    font-size:9px !important;background:rgba(255,255,255,.7) !important;
+    color:#5a6a5f !important;
+  }
+  .leaflet-control-attribution a{color:#3f7d4e !important;text-decoration:none;}
   .popup-title{font-weight:700;font-size:13px;color:var(--bio-text);margin-bottom:3px;}
   .popup-cat{font-size:11px;color:var(--bio-leaf);margin-bottom:5px;}
   .popup-loc{font-size:11px;color:var(--bio-muted);}
@@ -550,7 +534,6 @@
   .info-box.danger{background:linear-gradient(135deg,#fbeae7,#f5c7c1);border-left-color:var(--bio-danger);color:#8a2a1e;}
   .info-box.mod{background:linear-gradient(135deg,var(--mod-blue-light),#c9dcef);border-left-color:var(--mod-blue);color:var(--mod-blue);}
 
-  /* ===== Rangliste ===== */
   .rank-row{
     display:flex;align-items:center;gap:12px;padding:12px 14px;
     background:#fff;border:1px solid #e3efe6;border-radius:14px;
@@ -615,7 +598,6 @@
     cursor:pointer;font-family:inherit;
   }
 
-  /* ===== Moderator ===== */
   .mod-header{
     background:linear-gradient(140deg,var(--mod-blue),#5a7ba6);
     border-radius:18px;padding:18px;color:#fff;margin-bottom:16px;
@@ -739,11 +721,7 @@
       </div>
     </div>
     <p class="tagline">Verschenke, was du nicht mehr brauchst – finde Schätze in deiner Nachbarschaft.</p>
-
-    <!-- ===== NEU: Zurück-Button oben rechts ===== -->
-    <button class="header-back-btn" id="headerBackBtn" aria-label="Zurück" title="Zurück">
-      ←
-    </button>
+    <button class="header-back-btn" id="headerBackBtn" aria-label="Zurück" title="Zurück">←</button>
   </header>
 
   <div class="views">
@@ -959,7 +937,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* =====================================================
-   KISTE – Vollversion mit VIP, Moderator & Zurück-Button
+   KISTE – Vollversion mit VIP, Moderator, Zurück-Button
+   Karten: Leaflet + OpenStreetMap (kostenlos, kein API-Key)
    ===================================================== */
 
 const CATEGORIES = {
@@ -971,7 +950,7 @@ const CATEGORIES = {
   other:   { label:'Sonstiges',    emoji:'📦', color:'#8ba888', bg:'#e8efe8' },
 };
 
-const DEFAULT_LOC = { lat: 52.5200, lng: 13.4050 };
+const DEFAULT_LOC = { lat: 47.5533, lng: 7.6667 };  // Bad Krozingen
 
 // ===== Limits & Schwellen =====
 const MAX_ITEMS = 5;
@@ -994,7 +973,6 @@ const TRUST_LEVELS = [
   { min: 400, name:'Botschafter',     emoji:'🏆', badge:'gold',   color:'#e0a52a' },
 ];
 
-/* ===== Moderatoren / VIP System ===== */
 const VIP_TOP_PERCENT = 0.10;
 const VIP_MIN_ACTIVITY_POINTS = 30;
 const VIP_MAX_PER_CITY = 50;
@@ -1009,6 +987,7 @@ const CITY_SIZES = {
   'heilbronn':  { name:'Heilbronn',            size:126000 },
   'pforzheim':  { name:'Pforzheim',            size:125000 },
   'ulm':        { name:'Ulm',                  size:126000 },
+  'badkrozingen':{ name:'Bad Krozingen',       size:19000 },
   'default':    { name:'Deine Stadt',          size:50000 },
 };
 
@@ -1395,15 +1374,15 @@ function seedDemoItems(){
   const demos = [
     { title:'Gemüsekiste – frische Ernte', cat:'food', emoji:'🍅🥕🥬',
       desc:'Tomaten, Karotten, Salat – alles aus dem eigenen Garten.',
-      dLat:0.0009, dLng:-0.0006, addr:'Gartenstraße 14, Vorgarten',
+      dLat:0.0009, dLng:-0.0006, addr:'Kastelbergstr. 12, Vorgarten',
       giver:'Maria K.', minAgo:12, hours:24, verified:true, verifiers:['Thomas B.','Lena S.','Anna H.'] },
     { title:'Kinderbücher & Puzzle', cat:'books', emoji:'📚🧸🎲',
       desc:'Gut erhaltene Bilderbücher und zwei Holzpuzzle ab 3 Jahren.',
-      dLat:-0.0006, dLng:0.0008, addr:'Lindenweg 3, Hofeingang',
+      dLat:-0.0006, dLng:0.0008, addr:'Bahnhofstr. 3, Hofeingang',
       giver:'Thomas B.', minAgo:65, hours:48, verified:true, verifiers:['Maria K.','Lena S.','Anna H.'] },
     { title:'Brettspiele-Sammlung', cat:'toys', emoji:'🎲♟️🃏',
       desc:'Drei gut erhaltene Brettspiele für die ganze Familie.',
-      dLat:0.0013, dLng:0.0005, addr:'Bergstraße 42, Eingang',
+      dLat:0.0013, dLng:0.0005, addr:'Hauptstr. 42, Eingang',
       giver:'Peter M.', minAgo:5, hours:24, verified:false, verifiers:[] },
   ];
   return demos.map((d, i) => ({
@@ -2641,24 +2620,33 @@ function renderModerator(){
 }
 
 /* =====================================================
-   KARTE
+   KARTE – Leaflet + OpenStreetMap
    ===================================================== */
 let map = null, markersLayer = null, userMarker = null;
 
 function initMap(){
   if(map) return;
-  map = L.map('map', { zoomControl:false, attributionControl:false })
-    .setView([DEFAULT_LOC.lat, DEFAULT_LOC.lng], 15);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19, subdomains: 'abcd',
+  map = L.map('map', {
+    zoomControl:false,
+    attributionControl:true,
+  }).setView([DEFAULT_LOC.lat, DEFAULT_LOC.lng], 14);
+
+  // OpenStreetMap – kostenlos, kein API-Key nötig
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap-Mitwirkende',
   }).addTo(map);
+
+  // Zoom-Steuerung unten rechts hinzufügen
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
   markersLayer = L.layerGroup().addTo(map);
 }
 
 function updateMap(){
   initMap();
   const center = [DEFAULT_LOC.lat, DEFAULT_LOC.lng];
-  map.setView(center, 15);
+  map.setView(center, 14);
   markersLayer.clearLayers();
   if(userMarker){ map.removeLayer(userMarker); userMarker = null; }
 
@@ -2892,9 +2880,11 @@ const LEGAL_CONTENT = {
     <p>Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und lit. f DSGVO (berechtigtes Interesse).</p>
     <h3>5. Speicherdauer</h3>
     <p>Fotos werden nach Ablauf automatisch gelöscht. GPS-Daten werden nur zur Verifikation gespeichert.</p>
-    <h3>6. Weitergabe</h3>
-    <p>Hosting-Dienstleister, Zahlungsdienstleister (Play Store).</p>
-    <h3>7. Ihre Rechte</h3>
+    <h3>6. Karten</h3>
+    <p>Zur Darstellung der Karte nutzen wir den Dienst <strong>OpenStreetMap</strong> (OpenStreetMap Foundation, St John's Innovation Centre, Cowley Road, Cambridge, CB4 0WS, United Kingdom). Beim Laden der Karte werden IP-Adresse und Kartenausschnitt an OpenStreetMap übertragen. Weitere Informationen: openstreetmap.org/copyright.</p>
+    <h3>7. Weitergabe</h3>
+    <p>Hosting-Dienstleister, Zahlungsdienstleister (Play Store), OpenStreetMap.</p>
+    <h3>8. Ihre Rechte</h3>
     <p>Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch, Datenübertragbarkeit.</p>`,
 
   agb: `<h2>Allgemeine Geschäftsbedingungen</h2>
@@ -2994,12 +2984,9 @@ function cleanupExpired(){
   }
 }
 
-/* =====================================================
-   Stadt / Adresse bearbeiten
-   ===================================================== */
 function editCity(){
   const current = state.user?.city || '';
-  const c = prompt('In welcher Stadt bist du aktiv? (z. B. Freiburg, Stuttgart)', current);
+  const c = prompt('In welcher Stadt bist du aktiv? (z. B. Bad Krozingen, Freiburg)', current);
   if(c === null) return;
   const city = c.trim().slice(0,60);
   const key = normalizeCityKey(city);
