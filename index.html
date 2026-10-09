@@ -58,6 +58,46 @@
   .brand small{display:block;font-size:9px;letter-spacing:3px;font-weight:400;color:var(--bio-mint);margin-top:3px;}
   .tagline{margin-top:14px;font-size:12.5px;color:#d7ecdb;line-height:1.5;max-width:280px;position:relative;z-index:1;}
 
+  /* ===== Zurück-Button in der Header-Leiste ===== */
+  .header-back-btn{
+    position:absolute;
+    top:22px;
+    right:22px;
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    background:rgba(255,255,255,.18);
+    border:1.5px solid rgba(255,255,255,.35);
+    color:#fff;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    z-index:5;
+    font-size:20px;
+    font-family:inherit;
+    transition:background .15s, transform .15s;
+    backdrop-filter:blur(6px);
+    padding:0;
+  }
+  .header-back-btn:active{
+    transform:scale(.92);
+    background:rgba(255,255,255,.3);
+  }
+  .header-back-btn.show{ display:flex; }
+  .header.compact .header-back-btn{
+    top:14px;
+    right:22px;
+  }
+  @media (max-width:480px){
+    .header-back-btn{
+      top:calc(22px + env(safe-area-inset-top, 0px));
+    }
+    .header.compact .header-back-btn{
+      top:calc(14px + env(safe-area-inset-top, 0px));
+    }
+  }
+
   .views{flex:1 1 auto;position:relative;overflow:hidden;}
   .view{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;}
   .view.active{display:flex;}
@@ -699,6 +739,11 @@
       </div>
     </div>
     <p class="tagline">Verschenke, was du nicht mehr brauchst – finde Schätze in deiner Nachbarschaft.</p>
+
+    <!-- ===== NEU: Zurück-Button oben rechts ===== -->
+    <button class="header-back-btn" id="headerBackBtn" aria-label="Zurück" title="Zurück">
+      ←
+    </button>
   </header>
 
   <div class="views">
@@ -914,7 +959,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* =====================================================
-   KISTE – Vollversion mit VIP & Moderator-System
+   KISTE – Vollversion mit VIP, Moderator & Zurück-Button
    ===================================================== */
 
 const CATEGORIES = {
@@ -993,15 +1038,16 @@ const state = {
   isRegistering: false,
   lastGPS: null,
   modTab: 'escalations',
+  previousView: 'feed',   // merkt sich vorherige Ansicht für Back-Button
 };
 
 /* ===== Storage ===== */
-const LS_USERS   = 'kiste.users.v6';
-const LS_SESSION = 'kiste.session.v6';
-const LS_ITEMS   = 'kiste.items.v6';
-const LS_REPORTS = 'kiste.reports.v6';
-const LS_ESCALATIONS = 'kiste.escalations.v6';
-const LS_FLAGGED = 'kiste.flagged.v6';
+const LS_USERS   = 'kiste.users.v7';
+const LS_SESSION = 'kiste.session.v7';
+const LS_ITEMS   = 'kiste.items.v7';
+const LS_REPORTS = 'kiste.reports.v7';
+const LS_ESCALATIONS = 'kiste.escalations.v7';
+const LS_FLAGGED = 'kiste.flagged.v7';
 const LS_LAST_VIP_CALC = 'kiste.vipCalc.v1';
 
 function lsGet(k, def){ try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : def; }catch(e){ return def; } }
@@ -1271,12 +1317,12 @@ function saveEscalations(e){ lsSet(LS_ESCALATIONS, e); }
 function getFlaggedUsers(){ return lsGet(LS_FLAGGED, []); }
 function saveFlaggedUsers(f){ lsSet(LS_FLAGGED, f); }
 
-function flagUser(uid, name, reason){
+function flagUser(userId, name, reason){
   const flagged = getFlaggedUsers();
-  if(flagged.some(f => f.uid === uid && f.active)) return;
+  if(flagged.some(f => f.uid === userId && f.active)) return;
   flagged.push({
-    id: uid_(),
-    uid,
+    id: 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,5),
+    uid: userId,
     name,
     reason,
     flaggedAt: Date.now(),
@@ -1285,8 +1331,6 @@ function flagUser(uid, name, reason){
   });
   saveFlaggedUsers(flagged);
 }
-
-function uid_(){ return 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,5); }
 
 /* ===== Image compression ===== */
 function compressImage(file, maxDim = 900){
@@ -1688,7 +1732,6 @@ async function negativeReportItem(itemId){
 
   addPointsAndLog(POINTS_NEGATIVE_CONFIRM, 'negative_report');
 
-  const itemAge = Date.now() - item.createdAt;
   const reportsInWindow = item.negativeReports.filter(r =>
     r.createdAt - item.createdAt <= NEGATIVE_REPORT_WINDOW_MS
   );
@@ -2131,7 +2174,6 @@ function openDetail(id){
     }
   }
 
-  // Mod-Aktionen
   let modActions = '';
   if(amMod && !it.mine){
     modActions = `
@@ -2176,7 +2218,6 @@ function openDetail(id){
 
       ${verifiersHtml}
       ${negativeHtml}
-
       ${modActions}
 
       <div class="modal-actions ${it.mine ? 'single' : ''}">
@@ -2209,14 +2250,12 @@ function openDetail(id){
   });
   document.getElementById('modalReport')?.addEventListener('click', () => openReportSheet(it.id));
 
-  // Mod-Aktionen
   document.getElementById('btnModRemove')?.addEventListener('click', () => {
     if(!confirm(`Kiste "${it.title}" als Moderator sofort entfernen?`)) return;
     it.bannedAt = Date.now();
     it.bannedByMod = state.user.name;
     it.bannedReason = 'Moderator-Entscheidung';
     saveAll();
-    // Owner markieren
     flagUser(it.ownerId, it.giver, `Kiste moderativ entfernt: ${it.title}`);
     closeModal();
     renderAll();
@@ -2419,16 +2458,14 @@ function renderModerator(){
   const cityName = getCityName(cityKey);
   const escalations = getEscalations().filter(e => {
     if(e.status !== 'open') return false;
-    // Nur Eskalationen der eigenen Stadt
     const item = state.items.find(i => i.id === e.itemId);
-    if(!item) return true; // Kein Item mehr → zeig es trotzdem
+    if(!item) return true;
     const itemCity = normalizeCityKey(item.address || '');
     return itemCity === cityKey || itemCity === 'default';
   });
 
   const flagged = getFlaggedUsers().filter(f => f.active);
 
-  const pendingItems = state.items.filter(it => !isItemActive(it) && !isItemBanned(it) && !isExpired(it));
   const negReported = state.items.filter(it => getNegativeReports(it).length > 0 && !isItemBanned(it));
 
   let html = `
@@ -2523,7 +2560,6 @@ function renderModerator(){
 
   el.innerHTML = html;
 
-  // Tab-Handler
   el.querySelectorAll('.mod-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       state.modTab = tab.dataset.tab;
@@ -2531,7 +2567,6 @@ function renderModerator(){
     });
   });
 
-  // Eskalation: Kiste erhalten
   el.querySelectorAll('[data-esc-approve]').forEach(btn => {
     btn.addEventListener('click', () => {
       const escId = btn.dataset.escApprove;
@@ -2543,7 +2578,6 @@ function renderModerator(){
     });
   });
 
-  // Eskalation: Kiste entfernen
   el.querySelectorAll('[data-esc-reject]').forEach(btn => {
     btn.addEventListener('click', () => {
       const escId = btn.dataset.escReject;
@@ -2567,7 +2601,6 @@ function renderModerator(){
     });
   });
 
-  // Nutzer freigeben
   el.querySelectorAll('[data-unflag]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.unflag;
@@ -2579,7 +2612,6 @@ function renderModerator(){
     });
   });
 
-  // Items: behalten / entfernen
   el.querySelectorAll('[data-item-keep]').forEach(btn => {
     btn.addEventListener('click', () => {
       const itemId = btn.dataset.itemKeep;
@@ -2657,9 +2689,37 @@ function updateMap(){
 }
 
 /* =====================================================
-   VIEW-WECHSEL
+   VIEW-WECHSEL + Zurück-Button
    ===================================================== */
-function switchView(name){
+// Ansichten, die einen Zurück-Button zeigen sollen
+const VIEWS_WITH_BACK_BTN = ['map', 'legal', 'moderator'];
+
+function updateBackButton(){
+  const btn = document.getElementById('headerBackBtn');
+  if(!btn) return;
+  const show = VIEWS_WITH_BACK_BTN.includes(state.view);
+  btn.classList.toggle('show', show);
+}
+
+function goBack(){
+  // Wenn wir aus einer "tiefen" Ansicht kommen, zurück zum Feed
+  const target = state.previousView && state.previousView !== state.view
+    ? state.previousView
+    : 'feed';
+  // Wenn die vorherige Ansicht selbst eine "tiefe" Ansicht war, fallback auf Feed
+  const safeTarget = VIEWS_WITH_BACK_BTN.includes(target) ? 'feed' : target;
+  switchView(safeTarget, { isBack: true });
+}
+
+function switchView(name, opts = {}){
+  // vorherige Ansicht merken (nur wenn wir nicht gerade "zurück" gehen)
+  if(!opts.isBack && state.view !== name){
+    const oldView = state.view;
+    // Merken nur wenn alte Ansicht keine "tiefe" Ansicht war (sonst würde der Back-Button immer zum gleichen Ziel führen)
+    if(!VIEWS_WITH_BACK_BTN.includes(oldView)){
+      state.previousView = oldView;
+    }
+  }
   state.view = name;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
@@ -2669,6 +2729,7 @@ function switchView(name){
   const fab = document.getElementById('fab');
   fab.classList.toggle('hidden', !(name === 'feed' || name === 'mine'));
   document.getElementById('appHeader').classList.toggle('compact', name !== 'feed');
+  updateBackButton();
   if(name === 'map') setTimeout(updateMap, 50);
   if(name === 'mine') renderMine();
   if(name === 'profile') renderProfile();
@@ -2938,10 +2999,6 @@ function cleanupExpired(){
 /* =====================================================
    Stadt / Adresse bearbeiten
    ===================================================== */
-function updateCityMenuFromRender(){
-  updateCityMenu();
-}
-
 function editCity(){
   const current = state.user?.city || '';
   const c = prompt('In welcher Stadt bist du aktiv? (z. B. Freiburg, Stuttgart)', current);
@@ -2972,7 +3029,6 @@ function editHomeAddress(){
 function initApp(){
   renderChips();
 
-  // Stadt ableiten beim ersten Start
   if(state.user && !state.user.cityKey){
     const guessedKey = state.user.homeAddress
       ? normalizeCityKey(state.user.homeAddress)
@@ -2992,8 +3048,8 @@ function initApp(){
   setInterval(cleanupExpired, 60000);
   cleanupExpired();
 
-  // Moderator-Nav-Eintrag einblenden, wenn Mod
   updateModeratorNav();
+  updateBackButton();
 }
 
 function updateModeratorNav(){
@@ -3031,6 +3087,18 @@ function init(){
     state.search = e.target.value;
     renderFeed();
   });
+
+  // ===== Zurück-Button =====
+  document.getElementById('headerBackBtn').addEventListener('click', goBack);
+
+  // Hardware-Back (Android / Browser)
+  window.addEventListener('popstate', () => {
+    if(VIEWS_WITH_BACK_BTN.includes(state.view)){
+      goBack();
+      history.pushState(null, '', location.href);
+    }
+  });
+  history.pushState(null, '', location.href);
 
   document.getElementById('menuName').addEventListener('click', () => {
     const n = prompt('Wie sollen dich andere sehen?', state.user?.name || '');
