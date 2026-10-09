@@ -219,6 +219,10 @@
     color:#5a6a5f !important;
   }
   .leaflet-control-attribution a{color:#3f7d4e !important;text-decoration:none;}
+  .leaflet-control-zoom a{
+    background:#fff !important;color:#3f7d4e !important;
+    border-color:#e3efe6 !important;
+  }
   .popup-title{font-weight:700;font-size:13px;color:var(--bio-text);margin-bottom:3px;}
   .popup-cat{font-size:11px;color:var(--bio-leaf);margin-bottom:5px;}
   .popup-loc{font-size:11px;color:var(--bio-muted);}
@@ -778,6 +782,7 @@
             <input type="text" id="fAddr" placeholder="Straße, Hof, Vorgarten…" maxlength="80">
             <button class="loc-btn" id="btnLocate" title="Aktuellen Standort verwenden">📍</button>
           </div>
+          <div id="locStatus" style="font-size:11px;color:var(--bio-muted);margin-top:6px;line-height:1.4;"></div>
         </div>
 
         <div class="field">
@@ -939,6 +944,7 @@
 /* =====================================================
    KISTE – Vollversion mit VIP, Moderator, Zurück-Button
    Karten: Leaflet + OpenStreetMap (kostenlos, kein API-Key)
+   Standort: GPS mit hoher Genauigkeit + Adress-Geocoding
    ===================================================== */
 
 const CATEGORIES = {
@@ -1013,20 +1019,23 @@ const state = {
   view: 'feed',
   filter: 'all',
   search: '',
-  draft: { photo: null, category: 'other', duration: 24 },
+  draft: { photo: null, category: 'other', duration: 24, lat: null, lng: null },
   isRegistering: false,
   lastGPS: null,
+  userLat: null,
+  userLng: null,
+  userAccuracy: null,
   modTab: 'escalations',
   previousView: 'feed',
 };
 
 /* ===== Storage ===== */
-const LS_USERS   = 'kiste.users.v7';
-const LS_SESSION = 'kiste.session.v7';
-const LS_ITEMS   = 'kiste.items.v7';
-const LS_REPORTS = 'kiste.reports.v7';
-const LS_ESCALATIONS = 'kiste.escalations.v7';
-const LS_FLAGGED = 'kiste.flagged.v7';
+const LS_USERS   = 'kiste.users.v8';
+const LS_SESSION = 'kiste.session.v8';
+const LS_ITEMS   = 'kiste.items.v8';
+const LS_REPORTS = 'kiste.reports.v8';
+const LS_ESCALATIONS = 'kiste.escalations.v8';
+const LS_FLAGGED = 'kiste.flagged.v8';
 const LS_LAST_VIP_CALC = 'kiste.vipCalc.v1';
 
 function lsGet(k, def){ try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : def; }catch(e){ return def; } }
@@ -1078,7 +1087,7 @@ function getNextLevel(points){
   return null;
 }
 
-/* ===== GPS ===== */
+/* ===== GPS (verbessert) ===== */
 function distanceMeters(lat1, lng1, lat2, lng2){
   const R = 6371000;
   const toRad = d => d * Math.PI / 180;
@@ -1092,22 +1101,76 @@ function getCurrentPosition(){
   return new Promise((resolve, reject) => {
     if(!navigator.geolocation){ reject(new Error('Geolocation nicht verfügbar')); return; }
     navigator.geolocation.getCurrentPosition(
-      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+      pos => resolve({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+      }),
       err => reject(err),
-      { enableHighAccuracy:true, timeout:8000, maximumAge:30000 }
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      }
     );
   });
 }
 
+function saveUserPosition(pos){
+  if(!state.user || !pos) return;
+  state.userLat = pos.lat;
+  state.userLng = pos.lng;
+  state.userAccuracy = pos.accuracy;
+  updateCurrentUser({
+    lastLat: pos.lat,
+    lastLng: pos.lng,
+    lastAccuracy: pos.accuracy,
+    lastPositionAt: Date.now(),
+  });
+}
+
 function getEffectivePosition(){
-  return getCurrentPosition().catch(() => {
-    const jitter = () => (Math.random() - 0.5) * 0.002;
+  return getCurrentPosition().then(pos => {
+    saveUserPosition(pos);
+    return pos;
+  }).catch(() => {
+    if(state.user?.lastLat && state.user?.lastLng){
+      return {
+        lat: state.user.lastLat,
+        lng: state.user.lastLng,
+        accuracy: state.user.lastAccuracy || 200,
+        fallback: true,
+      };
+    }
     return {
-      lat: (state.user?.homeLat || DEFAULT_LOC.lat) + jitter(),
-      lng: (state.user?.homeLng || DEFAULT_LOC.lng) + jitter(),
-      accuracy: 100, fallback: true,
+      lat: DEFAULT_LOC.lat,
+      lng: DEFAULT_LOC.lng,
+      accuracy: 500,
+      fallback: true,
     };
   });
+}
+
+// Geocoding über OpenStreetMap Nominatim
+async function geocodeAddress(address){
+  if(!address) return null;
+  try{
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(!data || data.length === 0) return null;
+    return {
+      lat: parseFloat(data[0].lat),
+      lng: parseFloat(data[0].lon),
+      displayName: data[0].display_name,
+    };
+  }catch(e){
+    console.warn('Geocoding fehlgeschlagen:', e);
+    return null;
+  }
 }
 
 /* ===== Ban ===== */
@@ -1374,15 +1437,15 @@ function seedDemoItems(){
   const demos = [
     { title:'Gemüsekiste – frische Ernte', cat:'food', emoji:'🍅🥕🥬',
       desc:'Tomaten, Karotten, Salat – alles aus dem eigenen Garten.',
-      dLat:0.0009, dLng:-0.0006, addr:'Kastelbergstr. 12, Vorgarten',
+      dLat:0.0012, dLng:-0.0008, addr:'Kastelbergstr. 12, Vorgarten',
       giver:'Maria K.', minAgo:12, hours:24, verified:true, verifiers:['Thomas B.','Lena S.','Anna H.'] },
     { title:'Kinderbücher & Puzzle', cat:'books', emoji:'📚🧸🎲',
       desc:'Gut erhaltene Bilderbücher und zwei Holzpuzzle ab 3 Jahren.',
-      dLat:-0.0006, dLng:0.0008, addr:'Bahnhofstr. 3, Hofeingang',
+      dLat:-0.0008, dLng:0.0010, addr:'Bahnhofstr. 3, Hofeingang',
       giver:'Thomas B.', minAgo:65, hours:48, verified:true, verifiers:['Maria K.','Lena S.','Anna H.'] },
     { title:'Brettspiele-Sammlung', cat:'toys', emoji:'🎲♟️🃏',
       desc:'Drei gut erhaltene Brettspiele für die ganze Familie.',
-      dLat:0.0013, dLng:0.0005, addr:'Hauptstr. 42, Eingang',
+      dLat:0.0015, dLng:0.0006, addr:'Hauptstr. 42, Eingang',
       giver:'Peter M.', minAgo:5, hours:24, verified:false, verifiers:[] },
   ];
   return demos.map((d, i) => ({
@@ -1487,6 +1550,7 @@ function registerUser(email, password){
     homeAddress: '', bannedUntil: 0,
     city: '', cityKey: 'default',
     activityLog: [],
+    lastLat: null, lastLng: null, lastAccuracy: null, lastPositionAt: 0,
     isVip: false, vipUntil: 0, vipCode: '', vipGrantedAt: 0, vipMonthsWon: 0,
     createdAt: Date.now(),
   };
@@ -1592,6 +1656,8 @@ function logout(){
   if(!confirm('Wirklich abmelden?')) return;
   clearSession();
   state.user = null;
+  state.userLat = null;
+  state.userLng = null;
   state.items = state.items.filter(it => !it.mine);
   saveAll();
   closeModal();
@@ -2627,17 +2693,17 @@ let map = null, markersLayer = null, userMarker = null;
 function initMap(){
   if(map) return;
   map = L.map('map', {
-    zoomControl:false,
-    attributionControl:true,
+    zoomControl: false,
+    attributionControl: true,
+    maxZoom: 19,
+    minZoom: 3,
   }).setView([DEFAULT_LOC.lat, DEFAULT_LOC.lng], 14);
 
-  // OpenStreetMap – kostenlos, kein API-Key nötig
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap-Mitwirkende',
   }).addTo(map);
 
-  // Zoom-Steuerung unten rechts hinzufügen
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
   markersLayer = L.layerGroup().addTo(map);
@@ -2645,17 +2711,45 @@ function initMap(){
 
 function updateMap(){
   initMap();
-  const center = [DEFAULT_LOC.lat, DEFAULT_LOC.lng];
-  map.setView(center, 14);
+
+  let userLat = state.userLat;
+  let userLng = state.userLng;
+  if(userLat == null && state.user?.lastLat){
+    userLat = state.user.lastLat;
+    userLng = state.user.lastLng;
+  }
+
+  let center = [DEFAULT_LOC.lat, DEFAULT_LOC.lng];
+  let zoom = 14;
+
+  if(userLat != null && userLng != null){
+    center = [userLat, userLng];
+    zoom = 16;
+  } else {
+    const firstActive = state.items.find(it =>
+      !isExpired(it) && isItemActive(it) && !isItemBanned(it)
+    );
+    if(firstActive){
+      center = [firstActive.lat, firstActive.lng];
+    }
+  }
+
+  map.setView(center, zoom);
   markersLayer.clearLayers();
   if(userMarker){ map.removeLayer(userMarker); userMarker = null; }
 
-  const userIcon = L.divIcon({
-    className: '',
-    html: '<div class="user-marker" style="width:18px;height:18px;"></div>',
-    iconSize: [18,18], iconAnchor: [9,9],
-  });
-  userMarker = L.marker(center, { icon: userIcon }).addTo(map);
+  if(userLat != null && userLng != null){
+    const userIcon = L.divIcon({
+      className: '',
+      html: '<div class="user-marker" style="width:18px;height:18px;"></div>',
+      iconSize: [18,18], iconAnchor: [9,9],
+    });
+    userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(map);
+    userMarker.bindPopup(`
+      <div class="popup-title">Dein Standort</div>
+      <div class="popup-loc">Genauigkeit: ±${Math.round(state.userAccuracy || state.user?.lastAccuracy || 0)} m</div>
+    `);
+  }
 
   state.items.filter(it => !isExpired(it) && isItemActive(it) && !isItemBanned(it)).forEach(it => {
     const cat = CATEGORIES[it.category] || CATEGORIES.other;
@@ -2725,6 +2819,13 @@ function switchView(name, opts = {}){
 /* =====================================================
    FORMULAR
    ===================================================== */
+function setLocStatus(text, color){
+  const el = document.getElementById('locStatus');
+  if(!el) return;
+  el.textContent = text;
+  el.style.color = color || 'var(--bio-muted)';
+}
+
 function initForm(){
   const picker = document.getElementById('catPicker');
   picker.innerHTML = Object.entries(CATEGORIES).map(([k,v]) =>
@@ -2773,14 +2874,41 @@ function initForm(){
     const btn = this;
     btn.classList.add('loading');
     btn.textContent = '…';
+    setLocStatus('GPS wird abgefragt…', 'var(--bio-accent)');
     try{
-      const pos = await getEffectivePosition();
+      const pos = await getCurrentPosition();
       state.draft.lat = pos.lat;
       state.draft.lng = pos.lng;
+      saveUserPosition(pos);
       toast('Standort gesetzt 📍');
+      setLocStatus(`Standort gesetzt · Genauigkeit ±${Math.round(pos.accuracy)} m`, 'var(--bio-leaf)');
+
       const addr = document.getElementById('fAddr');
-      if(!addr.value) addr.value = 'Aktueller Standort';
+      if(!addr.value){
+        // Reverse-Geocoding: Koordinaten in Adresse umwandeln
+        try{
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`,
+            { headers: { 'Accept': 'application/json' } }
+          );
+          if(res.ok){
+            const data = await res.json();
+            if(data && data.display_name){
+              // Nur die ersten zwei Teile (Straße, Ort)
+              const parts = data.display_name.split(',').slice(0,2).map(s => s.trim());
+              addr.value = parts.join(', ');
+            } else {
+              addr.value = `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+            }
+          } else {
+            addr.value = `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+          }
+        }catch(e){
+          addr.value = `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+        }
+      }
     }catch(err){
+      setLocStatus('Standort nicht verfügbar. Bitte GPS aktivieren und nach draußen gehen.', 'var(--bio-danger)');
       toast('Standort nicht verfügbar', true);
     } finally {
       btn.classList.remove('loading');
@@ -2791,7 +2919,7 @@ function initForm(){
   document.getElementById('btnSubmit').addEventListener('click', submitItem);
 }
 
-function submitItem(){
+async function submitItem(){
   if(!state.user){ toast('Bitte zuerst anmelden', true); return; }
 
   if(isUserBanned(state.user)){
@@ -2811,10 +2939,41 @@ function submitItem(){
   const addr  = document.getElementById('fAddr').value.trim();
 
   if(!title){ toast('Bitte einen Titel angeben', true); return; }
-  if(!addr && !state.draft.lat){ toast('Bitte einen Standort angeben', true); return; }
+  if(!addr && state.draft.lat == null){ toast('Bitte einen Standort angeben', true); return; }
 
-  const lat = state.draft.lat || (DEFAULT_LOC.lat + (Math.random()-0.5)*0.004);
-  const lng = state.draft.lng || (DEFAULT_LOC.lng + (Math.random()-0.5)*0.004);
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  const oldText = btn.textContent;
+  btn.textContent = 'Standort wird ermittelt…';
+
+  let lat = state.draft.lat;
+  let lng = state.draft.lng;
+
+  // Wenn keine GPS-Koordinaten, aber Adresse eingegeben → Geocoding
+  if((lat == null || lng == null) && addr){
+    setLocStatus('Adresse wird in Koordinaten umgerechnet…', 'var(--bio-accent)');
+    const geo = await geocodeAddress(addr);
+    if(geo){
+      lat = geo.lat;
+      lng = geo.lng;
+      setLocStatus(`Adresse gefunden: ${geo.displayName.slice(0, 60)}`, 'var(--bio-leaf)');
+    }
+  }
+
+  // Letzter Fallback: Nutzer-Position
+  if(lat == null || lng == null){
+    const pos = await getEffectivePosition();
+    lat = pos.lat;
+    lng = pos.lng;
+  }
+
+  btn.disabled = false;
+  btn.textContent = oldText;
+
+  if(lat == null || lng == null){
+    toast('Standort konnte nicht ermittelt werden. Bitte GPS aktivieren oder Adresse eingeben.', true);
+    return;
+  }
 
   const item = {
     id: uid(),
@@ -2847,6 +3006,7 @@ function submitItem(){
   state.draft.photo = null;
   state.draft.lat = null;
   state.draft.lng = null;
+  setLocStatus('');
 
   toast('Kiste geteilt! Wartet auf 3 Vor-Ort-Bestätigungen 🌱');
   renderAll();
@@ -2881,7 +3041,7 @@ const LEGAL_CONTENT = {
     <h3>5. Speicherdauer</h3>
     <p>Fotos werden nach Ablauf automatisch gelöscht. GPS-Daten werden nur zur Verifikation gespeichert.</p>
     <h3>6. Karten</h3>
-    <p>Zur Darstellung der Karte nutzen wir den Dienst <strong>OpenStreetMap</strong> (OpenStreetMap Foundation, St John's Innovation Centre, Cowley Road, Cambridge, CB4 0WS, United Kingdom). Beim Laden der Karte werden IP-Adresse und Kartenausschnitt an OpenStreetMap übertragen. Weitere Informationen: openstreetmap.org/copyright.</p>
+    <p>Zur Darstellung der Karte nutzen wir den Dienst <strong>OpenStreetMap</strong> (OpenStreetMap Foundation, St John's Innovation Centre, Cowley Road, Cambridge, CB4 0WS, United Kingdom). Beim Laden der Karte werden IP-Adresse und Kartenausschnitt an OpenStreetMap übertragen. Zur Umwandlung von Adressen in Koordinaten nutzen wir den Dienst <strong>Nominatim</strong>. Weitere Informationen: openstreetmap.org/copyright.</p>
     <h3>7. Weitergabe</h3>
     <p>Hosting-Dienstleister, Zahlungsdienstleister (Play Store), OpenStreetMap.</p>
     <h3>8. Ihre Rechte</h3>
@@ -3014,6 +3174,14 @@ function editHomeAddress(){
 function initApp(){
   renderChips();
 
+  // Beim Start GPS abrufen und speichern
+  if(navigator.geolocation && state.user){
+    getCurrentPosition().then(pos => {
+      saveUserPosition(pos);
+      if(state.view === 'map') updateMap();
+    }).catch(() => {});
+  }
+
   if(state.user && !state.user.cityKey){
     const guessedKey = state.user.homeAddress
       ? normalizeCityKey(state.user.homeAddress)
@@ -3132,6 +3300,12 @@ function init(){
     const u = findUserByUid(session.uid);
     if(u){
       state.user = u;
+      // Letzte bekannte Position laden
+      if(u.lastLat != null && u.lastLng != null){
+        state.userLat = u.lastLat;
+        state.userLng = u.lastLng;
+        state.userAccuracy = u.lastAccuracy;
+      }
       authOverlay.classList.remove('show');
       initApp();
       switchView('feed');
