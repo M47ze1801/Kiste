@@ -208,7 +208,6 @@
   .empty .emo{font-size:44px;display:block;margin-bottom:10px;opacity:.7;}
   .empty strong{display:block;color:var(--bio-text);font-size:14px;margin-bottom:6px;}
 
-  /* ===== Leaflet / OpenStreetMap ===== */
   #map{width:100%;height:100%;background:var(--bio-light);}
   .leaflet-container{font-family:inherit;background:#e6f3e9;}
   .leaflet-popup-content-wrapper{border-radius:14px;box-shadow:0 4px 16px rgba(31,58,42,.2);}
@@ -282,13 +281,26 @@
   .loc-btn:active{background:var(--bio-mint);}
   .loc-btn.loading{opacity:.6;pointer-events:none;}
 
-  .duration{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
-  .dur-opt{
-    padding:10px 4px;border-radius:12px;background:var(--bio-light);
-    color:var(--bio-leaf);font-size:12px;font-weight:700;text-align:center;
-    cursor:pointer;border:1.5px solid transparent;transition:all .15s;font-family:inherit;
+  /* Feste 24h-Anzeige statt Auswahl */
+  .visibility-fixed{
+    display:flex;align-items:center;gap:12px;
+    background:linear-gradient(135deg,#e8f3ea,#d7ead9);
+    border-radius:14px;padding:14px 16px;
+    border-left:4px solid var(--bio-green);
   }
-  .dur-opt.selected{background:var(--bio-leaf);color:#fff;}
+  .visibility-fixed .v-icon{
+    font-size:26px;flex:0 0 auto;
+  }
+  .visibility-fixed .v-text{
+    flex:1;min-width:0;
+  }
+  .visibility-fixed .v-title{
+    font-size:14px;font-weight:800;color:var(--bio-dark);
+    margin-bottom:2px;
+  }
+  .visibility-fixed .v-sub{
+    font-size:11px;color:var(--bio-muted);line-height:1.4;
+  }
 
   .btn-primary{
     width:100%;padding:16px;border-radius:16px;
@@ -786,12 +798,13 @@
         </div>
 
         <div class="field">
-          <label>Sichtbar für</label>
-          <div class="duration" id="durPicker">
-            <div class="dur-opt" data-h="6">6 Std.</div>
-            <div class="dur-opt selected" data-h="24">24 Std.</div>
-            <div class="dur-opt" data-h="72">3 Tage</div>
-            <div class="dur-opt" data-h="168">7 Tage</div>
+          <label>Sichtbarkeit</label>
+          <div class="visibility-fixed">
+            <div class="v-icon">⏱</div>
+            <div class="v-text">
+              <div class="v-title">24 Stunden sichtbar</div>
+              <div class="v-sub">Deine Kiste wird nach 24 Stunden automatisch entfernt – Foto und Eintrag. Danach musst du sie neu teilen.</div>
+            </div>
           </div>
         </div>
 
@@ -942,9 +955,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* =====================================================
-   KISTE – Vollversion mit VIP, Moderator, Zurück-Button
-   Karten: Leaflet + OpenStreetMap (kostenlos, kein API-Key)
-   Standort: GPS mit hoher Genauigkeit + Adress-Geocoding
+   KISTE – Vollversion
+   Sichtbarkeit fest auf 24 Stunden begrenzt
    ===================================================== */
 
 const CATEGORIES = {
@@ -956,10 +968,12 @@ const CATEGORIES = {
   other:   { label:'Sonstiges',    emoji:'📦', color:'#8ba888', bg:'#e8efe8' },
 };
 
-const DEFAULT_LOC = { lat: 47.5533, lng: 7.6667 };  // Bad Krozingen
+const DEFAULT_LOC = { lat: 47.5533, lng: 7.6667 };
 
 // ===== Limits & Schwellen =====
 const MAX_ITEMS = 5;
+const VISIBILITY_HOURS = 24;   // Fest: Kisten sind nur 24 Stunden sichtbar
+const VISIBILITY_MS = VISIBILITY_HOURS * 60 * 60 * 1000;
 const VERIFICATIONS_NEEDED = 3;
 const NEGATIVE_REPORTS_FOR_BAN = 3;
 const NEGATIVE_REPORT_WINDOW_MS = 60 * 60 * 1000;
@@ -1019,7 +1033,7 @@ const state = {
   view: 'feed',
   filter: 'all',
   search: '',
-  draft: { photo: null, category: 'other', duration: 24, lat: null, lng: null },
+  draft: { photo: null, category: 'other', lat: null, lng: null },
   isRegistering: false,
   lastGPS: null,
   userLat: null,
@@ -1030,12 +1044,12 @@ const state = {
 };
 
 /* ===== Storage ===== */
-const LS_USERS   = 'kiste.users.v8';
-const LS_SESSION = 'kiste.session.v8';
-const LS_ITEMS   = 'kiste.items.v8';
-const LS_REPORTS = 'kiste.reports.v8';
-const LS_ESCALATIONS = 'kiste.escalations.v8';
-const LS_FLAGGED = 'kiste.flagged.v8';
+const LS_USERS   = 'kiste.users.v9';
+const LS_SESSION = 'kiste.session.v9';
+const LS_ITEMS   = 'kiste.items.v9';
+const LS_REPORTS = 'kiste.reports.v9';
+const LS_ESCALATIONS = 'kiste.escalations.v9';
+const LS_FLAGGED = 'kiste.flagged.v9';
 const LS_LAST_VIP_CALC = 'kiste.vipCalc.v1';
 
 function lsGet(k, def){ try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : def; }catch(e){ return def; } }
@@ -1087,7 +1101,7 @@ function getNextLevel(points){
   return null;
 }
 
-/* ===== GPS (verbessert) ===== */
+/* ===== GPS ===== */
 function distanceMeters(lat1, lng1, lat2, lng2){
   const R = 6371000;
   const toRad = d => d * Math.PI / 180;
@@ -1151,7 +1165,6 @@ function getEffectivePosition(){
   });
 }
 
-// Geocoding über OpenStreetMap Nominatim
 async function geocodeAddress(address){
   if(!address) return null;
   try{
@@ -1347,7 +1360,6 @@ function getMyPreviousMonthPoints(){
   return getMonthlyPoints(state.user, -1);
 }
 
-/* ===== Mod-Rechte ===== */
 function isModerator(user){
   if(!user) return false;
   return user.isVip && user.vipUntil && user.vipUntil > Date.now();
@@ -1434,19 +1446,20 @@ function toast(msg, isError){
 function seedDemoItems(){
   const now = Date.now();
   const base = DEFAULT_LOC;
+  // Demo-Kisten: nur die letzten 24h
   const demos = [
     { title:'Gemüsekiste – frische Ernte', cat:'food', emoji:'🍅🥕🥬',
       desc:'Tomaten, Karotten, Salat – alles aus dem eigenen Garten.',
       dLat:0.0012, dLng:-0.0008, addr:'Kastelbergstr. 12, Vorgarten',
-      giver:'Maria K.', minAgo:12, hours:24, verified:true, verifiers:['Thomas B.','Lena S.','Anna H.'] },
+      giver:'Maria K.', minAgo:12, verified:true, verifiers:['Thomas B.','Lena S.','Anna H.'] },
     { title:'Kinderbücher & Puzzle', cat:'books', emoji:'📚🧸🎲',
       desc:'Gut erhaltene Bilderbücher und zwei Holzpuzzle ab 3 Jahren.',
       dLat:-0.0008, dLng:0.0010, addr:'Bahnhofstr. 3, Hofeingang',
-      giver:'Thomas B.', minAgo:65, hours:48, verified:true, verifiers:['Maria K.','Lena S.','Anna H.'] },
+      giver:'Thomas B.', minAgo:5, verified:true, verifiers:['Maria K.','Lena S.','Anna H.'] },
     { title:'Brettspiele-Sammlung', cat:'toys', emoji:'🎲♟️🃏',
       desc:'Drei gut erhaltene Brettspiele für die ganze Familie.',
       dLat:0.0015, dLng:0.0006, addr:'Hauptstr. 42, Eingang',
-      giver:'Peter M.', minAgo:5, hours:24, verified:false, verifiers:[] },
+      giver:'Peter M.', minAgo:2, verified:false, verifiers:[] },
   ];
   return demos.map((d, i) => ({
     id: 'demo_' + i,
@@ -1456,7 +1469,7 @@ function seedDemoItems(){
     giverTrust: d.verified ? 'silver' : 'bronze',
     mine: false, ownerId: 'demo_' + i,
     createdAt: now - d.minAgo*60000,
-    expiresAt: now + d.hours*3600000,
+    expiresAt: now + VISIBILITY_MS - d.minAgo*60000,
     verifications: d.verifiers.map((v, k) => ({
       userId: 'demo_v_' + i + '_' + k,
       name: v, initials: makeInitials(v), logo: null,
@@ -1978,10 +1991,10 @@ function renderFeed(){
   const items = getVisibleItems();
   const tipHtml = `
     <div class="tip">
-      <span>💡</span>
+      <span>⏱</span>
       <div>
-        <strong>So funktioniert's</strong>
-        Fotos sind verwaschen, bis 3 Nutzer <b>vor Ort</b> die Kiste bestätigen. Bestätigung nur aus der Nähe (< ${GPS_CONFIRM_RADIUS_M} m).
+        <strong>24-Stunden-Kisten</strong>
+        Alle Kisten laufen automatisch nach <b>24 Stunden</b> ab. Danach werden Foto und Eintrag gelöscht.
       </div>
     </div>`;
 
@@ -1989,8 +2002,8 @@ function renderFeed(){
     list.innerHTML = tipHtml + `
       <div class="empty">
         <span class="emo">🌱</span>
-        <strong>Noch keine Kisten hier</strong>
-        Sei die erste Person und teile etwas in deiner Nachbarschaft.
+        <strong>Gerade keine Kisten hier</strong>
+        Schau später wieder vorbei oder teile selbst etwas.
       </div>`;
     return;
   }
@@ -2247,7 +2260,7 @@ function openDetail(id){
       ${it.desc ? `<p class="desc">${escapeHtml(it.desc)}</p>` : ''}
       <div class="modal-row"><span>📍</span><strong>${escapeHtml(it.address || 'Standort unbekannt')}</strong></div>
       <div class="modal-row"><span>👤</span> Geteilt von <strong>${escapeHtml(it.giver)}</strong></div>
-      <div class="modal-row"><span>🕒</span> ${timeAgo(it.createdAt)}</div>
+      <div class="modal-row"><span>🕒</span> ${timeAgo(it.createdAt)} · läuft automatisch nach 24 Std. ab</div>
 
       ${actionButtons}
 
@@ -2765,6 +2778,7 @@ function updateMap(){
       <div class="popup-title">${escapeHtml(it.title)}</div>
       <div class="popup-cat">${cat.emoji} ${cat.label} · ✓ Verifiziert</div>
       <div class="popup-loc">📍 ${escapeHtml(it.address || '')}</div>
+      <div class="popup-loc">⏱ ${expiresIn(it.expiresAt)}</div>
     `);
   });
   setTimeout(() => map.invalidateSize(), 100);
@@ -2838,13 +2852,7 @@ function initForm(){
     });
   });
 
-  const dur = document.getElementById('durPicker');
-  dur.querySelectorAll('.dur-opt').forEach(el => {
-    el.addEventListener('click', () => {
-      state.draft.duration = parseInt(el.dataset.h, 10);
-      dur.querySelectorAll('.dur-opt').forEach(x => x.classList.toggle('selected', x === el));
-    });
-  });
+  // Kein Duration-Picker mehr – Sichtbarkeit ist fix 24h
 
   const photoInput = document.getElementById('photoInput');
   const photoFile = document.getElementById('photoFile');
@@ -2885,7 +2893,6 @@ function initForm(){
 
       const addr = document.getElementById('fAddr');
       if(!addr.value){
-        // Reverse-Geocoding: Koordinaten in Adresse umwandeln
         try{
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`,
@@ -2894,7 +2901,6 @@ function initForm(){
           if(res.ok){
             const data = await res.json();
             if(data && data.display_name){
-              // Nur die ersten zwei Teile (Straße, Ort)
               const parts = data.display_name.split(',').slice(0,2).map(s => s.trim());
               addr.value = parts.join(', ');
             } else {
@@ -2949,7 +2955,6 @@ async function submitItem(){
   let lat = state.draft.lat;
   let lng = state.draft.lng;
 
-  // Wenn keine GPS-Koordinaten, aber Adresse eingegeben → Geocoding
   if((lat == null || lng == null) && addr){
     setLocStatus('Adresse wird in Koordinaten umgerechnet…', 'var(--bio-accent)');
     const geo = await geocodeAddress(addr);
@@ -2960,7 +2965,6 @@ async function submitItem(){
     }
   }
 
-  // Letzter Fallback: Nutzer-Position
   if(lat == null || lng == null){
     const pos = await getEffectivePosition();
     lat = pos.lat;
@@ -2975,6 +2979,7 @@ async function submitItem(){
     return;
   }
 
+  const now = Date.now();
   const item = {
     id: uid(),
     title, category: state.draft.category, desc,
@@ -2985,8 +2990,8 @@ async function submitItem(){
     giverLogo: state.user.logo,
     giverTrust: getTrustLevel(state.user.points || 0).badge,
     mine: true, ownerId: state.user.uid,
-    createdAt: Date.now(),
-    expiresAt: Date.now() + state.draft.duration * 3600000,
+    createdAt: now,
+    expiresAt: now + VISIBILITY_MS,   // immer 24 Std.
     verifications: [],
     negativeReports: [],
     bannedAt: 0,
@@ -3008,7 +3013,7 @@ async function submitItem(){
   state.draft.lng = null;
   setLocStatus('');
 
-  toast('Kiste geteilt! Wartet auf 3 Vor-Ort-Bestätigungen 🌱');
+  toast('Kiste geteilt! Sichtbar für 24 Std. – wartet auf Bestätigungen 🌱');
   renderAll();
   switchView('feed');
 }
@@ -3039,7 +3044,7 @@ const LEGAL_CONTENT = {
     <h3>4. Rechtsgrundlage</h3>
     <p>Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und lit. f DSGVO (berechtigtes Interesse).</p>
     <h3>5. Speicherdauer</h3>
-    <p>Fotos werden nach Ablauf automatisch gelöscht. GPS-Daten werden nur zur Verifikation gespeichert.</p>
+    <p>Kisten und Fotos werden nach <strong>24 Stunden</strong> automatisch gelöscht. Account-Daten werden bis zur Löschung des Kontos gespeichert. GPS-Daten werden nur zur Verifikation und Anzeige verwendet.</p>
     <h3>6. Karten</h3>
     <p>Zur Darstellung der Karte nutzen wir den Dienst <strong>OpenStreetMap</strong> (OpenStreetMap Foundation, St John's Innovation Centre, Cowley Road, Cambridge, CB4 0WS, United Kingdom). Beim Laden der Karte werden IP-Adresse und Kartenausschnitt an OpenStreetMap übertragen. Zur Umwandlung von Adressen in Koordinaten nutzen wir den Dienst <strong>Nominatim</strong>. Weitere Informationen: openstreetmap.org/copyright.</p>
     <h3>7. Weitergabe</h3>
@@ -3050,19 +3055,21 @@ const LEGAL_CONTENT = {
   agb: `<h2>Allgemeine Geschäftsbedingungen</h2>
     <h3>1. Vertragsgegenstand</h3>
     <p>KISTE ist eine Plattform zur kostenlosen Weitergabe von Gegenständen in der Nachbarschaft.</p>
-    <h3>2. Community-Verifizierung mit GPS</h3>
+    <h3>2. Sichtbarkeit: 24 Stunden</h3>
+    <p>Alle Kisten sind maximal <strong>24 Stunden</strong> sichtbar. Nach Ablauf dieser Frist werden Foto, Standort und Beschreibung automatisch aus der App entfernt. Eine Verlängerung ist nicht möglich – der Nutzer muss die Kiste neu teilen.</p>
+    <h3>3. Community-Verifizierung mit GPS</h3>
     <p>Neue Fotos werden erst nach 3 Vor-Ort-Bestätigungen sichtbar. Bestätigungen sind nur im Umkreis von ${GPS_CONFIRM_RADIUS_M} m möglich.</p>
-    <h3>3. Sperrung bei Missbrauch</h3>
+    <h3>4. Sperrung bei Missbrauch</h3>
     <p>Bei 3 unabhängigen Meldungen „Kiste nicht vorhanden" innerhalb der ersten Stunde wird der Ersteller für 24 Stunden gesperrt. Ist die Kiste an der eigenen Adresse des Melders, wird der Fall an den Support eskaliert.</p>
-    <h3>4. VIP-Status und Moderation</h3>
+    <h3>5. VIP-Status und Moderation</h3>
     <p>Die aktivsten 10 % der Nutzer pro Stadt werden monatlich zu VIP-Moderatoren ernannt. Sie erhalten einen Gratis-Abo-Code für den Folgemonat und erweiterte Moderationsrechte. Missbrauch führt zum sofortigen Verlust.</p>
-    <h3>5. Preis</h3>
+    <h3>6. Preis</h3>
     <p>9,99 € pro Monat inkl. 19 % MwSt., monatlich kündbar.</p>
-    <h3>6. Widerrufsrecht</h3>
+    <h3>7. Widerrufsrecht</h3>
     <p>Es gilt ein 14-tägiges Widerrufsrecht. Details siehe Widerrufsbelehrung.</p>
-    <h3>7. Haftung</h3>
+    <h3>8. Haftung</h3>
     <p>Die Plattform haftet nicht für die Richtigkeit der Angebote. Nutzer haften für ihre Inhalte.</p>
-    <h3>8. Kündigung</h3>
+    <h3>9. Kündigung</h3>
     <p>Monatlich zum Laufzeitende. Account-Löschung jederzeit möglich.</p>`,
 
   widerruf: `<h2>Widerrufsbelehrung</h2>
@@ -3111,6 +3118,9 @@ function showTrustInfo(){
       <li><strong>+${POINTS_NEGATIVE_CONFIRM}</strong> für ehrliche „Kiste fehlt"-Meldung</li>
       <li><strong>${POINTS_FALSE_REPORT}</strong> bei falscher Bestätigung</li>
     </ul>
+
+    <h2>Sichtbarkeit</h2>
+    <p>Alle Kisten sind maximal <strong>${VISIBILITY_HOURS} Stunden</strong> sichtbar. Danach werden Foto und Eintrag automatisch gelöscht.</p>
 
     <h2>GPS-Regeln</h2>
     <p>Bestätigungen nur im Umkreis von <b>${GPS_CONFIRM_RADIUS_M} m</b> um die Kiste.</p>
@@ -3174,7 +3184,6 @@ function editHomeAddress(){
 function initApp(){
   renderChips();
 
-  // Beim Start GPS abrufen und speichern
   if(navigator.geolocation && state.user){
     getCurrentPosition().then(pos => {
       saveUserPosition(pos);
@@ -3300,7 +3309,6 @@ function init(){
     const u = findUserByUid(session.uid);
     if(u){
       state.user = u;
-      // Letzte bekannte Position laden
       if(u.lastLat != null && u.lastLng != null){
         state.userLat = u.lastLat;
         state.userLng = u.lastLng;
