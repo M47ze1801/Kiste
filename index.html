@@ -1038,7 +1038,7 @@ const state = {
   isRegistering: false,
   lastGPS: null,
   modTab: 'escalations',
-  previousView: 'feed',   // merkt sich vorherige Ansicht für Back-Button
+  previousView: 'feed',
 };
 
 /* ===== Storage ===== */
@@ -2691,7 +2691,6 @@ function updateMap(){
 /* =====================================================
    VIEW-WECHSEL + Zurück-Button
    ===================================================== */
-// Ansichten, die einen Zurück-Button zeigen sollen
 const VIEWS_WITH_BACK_BTN = ['map', 'legal', 'moderator'];
 
 function updateBackButton(){
@@ -2702,20 +2701,16 @@ function updateBackButton(){
 }
 
 function goBack(){
-  // Wenn wir aus einer "tiefen" Ansicht kommen, zurück zum Feed
   const target = state.previousView && state.previousView !== state.view
     ? state.previousView
     : 'feed';
-  // Wenn die vorherige Ansicht selbst eine "tiefe" Ansicht war, fallback auf Feed
   const safeTarget = VIEWS_WITH_BACK_BTN.includes(target) ? 'feed' : target;
   switchView(safeTarget, { isBack: true });
 }
 
 function switchView(name, opts = {}){
-  // vorherige Ansicht merken (nur wenn wir nicht gerade "zurück" gehen)
   if(!opts.isBack && state.view !== name){
     const oldView = state.view;
-    // Merken nur wenn alte Ansicht keine "tiefe" Ansicht war (sonst würde der Back-Button immer zum gleichen Ziel führen)
     if(!VIEWS_WITH_BACK_BTN.includes(oldView)){
       state.previousView = oldView;
     }
@@ -2876,16 +2871,19 @@ function submitItem(){
 const LEGAL_CONTENT = {
   impressum: `<h2>Impressum</h2>
     <p>Angaben gemäß § 5 DDG</p>
-    <p><strong>[DEIN VOLLSTÄNDIGER NAME]</strong><br>
-    [STRASSE UND HAUSNUMMER]<br>
-    [PLZ ORT]<br>Deutschland</p>
-    <p>E-Mail: [DEINE E-MAIL]<br>Telefon: [DEINE TELEFONNUMMER]</p>
-    <p>Umsatzsteuer-ID gemäß § 27a UStG: [DEINE UST-ID]</p>
-    <p>Verantwortlich für den Inhalt: [DEIN NAME]</p>`,
+    <p><strong>Mathias Neumann</strong><br>
+    Kastelbergstr. 4<br>
+    79189 Bad Krozingen<br>
+    Deutschland</p>
+    <p>E-Mail: mathias1984@yahoo.de</p>
+    <p>Verantwortlich für den Inhalt: Mathias Neumann</p>`,
 
   datenschutz: `<h2>Datenschutzerklärung</h2>
     <h3>1. Verantwortlicher</h3>
-    <p>[DEIN NAME, ADRESSE, E-MAIL]</p>
+    <p>Mathias Neumann<br>
+    Kastelbergstr. 4<br>
+    79189 Bad Krozingen<br>
+    E-Mail: mathias1984@yahoo.de</p>
     <h3>2. Erhobene Daten</h3>
     <p>E-Mail, Profilname, Profilbild, <strong>GPS-Standortdaten</strong>, Fotos, Bewertungen, Vertrauenspunkte, Stadt.</p>
     <h3>3. Zweck</h3>
@@ -2919,7 +2917,7 @@ const LEGAL_CONTENT = {
 
   widerruf: `<h2>Widerrufsbelehrung</h2>
     <p>Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsschlusses.</p>
-    <p>Um Ihr Widerrufsrecht auszuüben, kontaktieren Sie uns unter [DEINE E-MAIL].</p>
+    <p>Um Ihr Widerrufsrecht auszuüben, kontaktieren Sie uns unter mathias1984@yahoo.de.</p>
     <p><strong>Hinweis:</strong> Das Widerrufsrecht erlischt nicht vorzeitig durch die Nutzung des Dienstes.</p>
     <h3>Muster-Widerrufsformular</h3>
     <p>Hiermit widerrufe ich den von mir abgeschlossenen Vertrag über die Nutzung der App KISTE.</p>
@@ -3088,10 +3086,8 @@ function init(){
     renderFeed();
   });
 
-  // ===== Zurück-Button =====
   document.getElementById('headerBackBtn').addEventListener('click', goBack);
 
-  // Hardware-Back (Android / Browser)
   window.addEventListener('popstate', () => {
     if(VIEWS_WITH_BACK_BTN.includes(state.view)){
       goBack();
