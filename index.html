@@ -88,6 +88,66 @@
   .search input::placeholder{color:var(--bio-muted);}
   .search .icon{color:var(--bio-leaf);font-size:16px;}
 
+  /* ===== Radius-Filter ===== */
+  .radius-bar{
+    display:flex;align-items:center;gap:12px;
+    margin:10px 18px 0;padding:10px 14px;
+    background:#fff;border-radius:14px;
+    box-shadow:0 2px 8px rgba(31,58,42,.08);
+    flex:0 0 auto;
+  }
+  .radius-bar .radius-label{
+    font-size:12px;color:var(--bio-muted);font-weight:700;
+    white-space:nowrap;min-width:60px;
+  }
+  .radius-bar .radius-label b{color:var(--bio-leaf);}
+  .radius-bar input[type=range]{
+    flex:1;-webkit-appearance:none;appearance:none;
+    height:6px;border-radius:3px;outline:none;cursor:pointer;
+    background:linear-gradient(90deg,
+      var(--bio-green) 0%,
+      var(--bio-green) var(--pct,20%),
+      #e3efe6 var(--pct,20%),
+      #e3efe6 100%);
+  }
+  .radius-bar input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:22px;height:22px;border-radius:50%;
+    background:var(--bio-leaf);border:3px solid #fff;
+    box-shadow:0 2px 6px rgba(31,58,42,.3);
+  }
+  .radius-bar input[type=range]::-moz-range-thumb{
+    width:22px;height:22px;border-radius:50%;background:var(--bio-leaf);
+    border:3px solid #fff;box-shadow:0 2px 6px rgba(31,58,42,.3);
+    cursor:pointer;
+  }
+  .radius-gps{
+    background:var(--bio-light);color:var(--bio-leaf);border:none;
+    width:34px;height:34px;border-radius:10px;font-size:15px;
+    cursor:pointer;font-family:inherit;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s;
+  }
+  .radius-gps:active{background:var(--bio-mint);}
+  .radius-gps.active{background:var(--bio-leaf);color:#fff;}
+
+  .radius-hint{
+    margin:8px 18px 0;padding:8px 12px;border-radius:12px;
+    background:#fdf0e0;color:#8a6420;font-size:11px;line-height:1.45;
+    border-left:3px solid var(--bio-accent);flex:0 0 auto;
+  }
+
+  .distance-pill{
+    display:inline-block;background:var(--bio-light);color:var(--bio-leaf);
+    font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;
+    margin-left:6px;vertical-align:middle;
+  }
+  .plz-pill{
+    display:inline-block;background:#eaf1ff;color:#3d5a80;
+    font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;
+    margin-left:6px;letter-spacing:.3px;vertical-align:middle;
+  }
+
   .chips{display:flex;gap:8px;padding:12px 18px 8px;overflow-x:auto;scrollbar-width:none;flex:0 0 auto;}
   .chips::-webkit-scrollbar{display:none;}
   .chip{
@@ -281,26 +341,16 @@
   .loc-btn:active{background:var(--bio-mint);}
   .loc-btn.loading{opacity:.6;pointer-events:none;}
 
-  /* Feste 24h-Anzeige statt Auswahl */
   .visibility-fixed{
     display:flex;align-items:center;gap:12px;
     background:linear-gradient(135deg,#e8f3ea,#d7ead9);
     border-radius:14px;padding:14px 16px;
     border-left:4px solid var(--bio-green);
   }
-  .visibility-fixed .v-icon{
-    font-size:26px;flex:0 0 auto;
-  }
-  .visibility-fixed .v-text{
-    flex:1;min-width:0;
-  }
-  .visibility-fixed .v-title{
-    font-size:14px;font-weight:800;color:var(--bio-dark);
-    margin-bottom:2px;
-  }
-  .visibility-fixed .v-sub{
-    font-size:11px;color:var(--bio-muted);line-height:1.4;
-  }
+  .visibility-fixed .v-icon{font-size:26px;flex:0 0 auto;}
+  .visibility-fixed .v-text{flex:1;min-width:0;}
+  .visibility-fixed .v-title{font-size:14px;font-weight:800;color:var(--bio-dark);margin-bottom:2px;}
+  .visibility-fixed .v-sub{font-size:11px;color:var(--bio-muted);line-height:1.4;}
 
   .btn-primary{
     width:100%;padding:16px;border-radius:16px;
@@ -361,15 +411,11 @@
     display:flex;align-items:center;gap:14px;
     border:1px solid #f0d9a8;
   }
-  .points-card .p-num{
-    font-size:32px;font-weight:800;color:#8a6420;line-height:1;
-  }
+  .points-card .p-num{font-size:32px;font-weight:800;color:#8a6420;line-height:1;}
   .points-card .p-label{font-size:12px;color:#8a6420;font-weight:600;margin-top:2px;}
   .points-card .p-icon{font-size:36px;}
   .points-card .p-info{flex:1;min-width:0;}
-  .points-card .p-next{
-    font-size:10px;color:#a07a30;margin-top:4px;
-  }
+  .points-card .p-next{font-size:10px;color:#a07a30;margin-top:4px;}
 
   .menu{background:#fff;border-radius:18px;border:1px solid #e3efe6;overflow:hidden;margin-bottom:14px;}
   .menu-item{
@@ -428,9 +474,7 @@
     background-color:var(--bio-light);display:flex;align-items:center;justify-content:center;
     font-size:80px;position:relative;overflow:hidden;
   }
-  .modal-photo.blurred > *:not(.blur-overlay){
-    filter:blur(20px);transform:scale(1.15);
-  }
+  .modal-photo.blurred > *:not(.blur-overlay){filter:blur(20px);transform:scale(1.15);}
   .modal-photo .blur-overlay{
     position:absolute;inset:0;z-index:2;color:#fff;text-align:center;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
@@ -575,9 +619,7 @@
   .rank-info{flex:1;min-width:0;}
   .rank-name{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .rank-sub{font-size:11px;color:var(--bio-muted);margin-top:2px;}
-  .rank-points{
-    font-weight:800;color:var(--bio-leaf);font-size:14px;flex:0 0 auto;
-  }
+  .rank-points{font-weight:800;color:var(--bio-leaf);font-size:14px;flex:0 0 auto;}
   .vip-badge{
     display:inline-flex;align-items:center;gap:3px;
     background:linear-gradient(135deg,#ffd96e,#e0a52a);
@@ -605,9 +647,7 @@
     font-family:'Courier New',monospace;font-size:18px;font-weight:800;
     color:#5a3e00;letter-spacing:1.5px;user-select:all;
   }
-  .vip-code-box .expires{
-    font-size:10px;color:#a07a30;margin-top:6px;
-  }
+  .vip-code-box .expires{font-size:10px;color:#a07a30;margin-top:6px;}
   .vip-code-box button{
     margin-top:10px;background:var(--bio-dark);color:#fff;border:none;
     padding:8px 16px;border-radius:10px;font-size:12px;font-weight:700;
@@ -625,17 +665,12 @@
   }
   .mod-header h3{font-size:16px;margin-bottom:6px;font-weight:800;position:relative;z-index:1;}
   .mod-header p{font-size:12px;color:#d9e8f5;line-height:1.5;position:relative;z-index:1;}
-  .mod-stat-grid{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;
-  }
+  .mod-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
   .mod-stat{
     background:#fff;border:1px solid #d9e8f5;border-radius:14px;
     padding:12px;text-align:center;
   }
-  .mod-stat .n{
-    font-size:22px;font-weight:800;color:var(--mod-blue);line-height:1;
-    margin-bottom:4px;
-  }
+  .mod-stat .n{font-size:22px;font-weight:800;color:var(--mod-blue);line-height:1;margin-bottom:4px;}
   .mod-stat .l{font-size:10px;color:var(--bio-muted);font-weight:600;}
   .escalation-card{
     background:#fff;border:1px solid #e3efe6;border-radius:16px;
@@ -672,9 +707,7 @@
     cursor:pointer;font-family:inherit;flex:0 0 auto;
   }
 
-  .mod-tabs{
-    display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;
-  }
+  .mod-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;}
   .mod-tabs::-webkit-scrollbar{display:none;}
   .mod-tab{
     flex:0 0 auto;padding:8px 14px;border-radius:999px;background:#fff;
@@ -745,8 +778,19 @@
     <section class="view active" id="view-feed">
       <div class="search">
         <span class="icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="Suche nach Gegenständen oder Orten…">
+        <input type="text" id="searchInput" placeholder="Suche nach Gegenständen, Orten oder PLZ…">
       </div>
+
+      <div class="radius-bar" id="radiusBar">
+        <span class="radius-label">📍 <b id="radiusVal">5 km</b></span>
+        <input type="range" id="radiusSlider" min="1" max="25" value="5" step="1"
+               aria-label="Umkreis in Kilometern">
+        <button class="radius-gps" id="radiusGpsBtn" title="Standort für Radius-Filter aktivieren">🎯</button>
+      </div>
+      <div class="radius-hint" id="radiusHint" style="display:none;">
+        Standort nicht aktiv – es werden alle Kisten gezeigt. Tippe auf 🎯, um nach Entfernung zu filtern.
+      </div>
+
       <div class="chips" id="chipBar"></div>
       <div class="feed" id="feedList"></div>
     </section>
@@ -820,7 +864,7 @@
       <div class="feed" style="padding-top:14px;">
         <div class="info-box">
           <strong>🏆 Top 10 % werden VIP & Moderator</strong>
-          Die aktivsten Nutzer deiner Stadt erhalten jeden Monat einen Gratis-Abo-Code und Moderator-Rechte.
+          Die aktivsten Nutzer deiner PLZ-Region erhalten jeden Monat einen Gratis-Abo-Code und Moderator-Rechte.
         </div>
         <div id="rankingContent"></div>
       </div>
@@ -877,7 +921,7 @@
             <span class="mi">🖼️</span> Logo ändern <span class="arrow">›</span>
           </div>
           <div class="menu-item" id="menuCity">
-            <span class="mi">🏙️</span> <span style="flex:1;">Stadt ändern</span>
+            <span class="mi">📮</span> <span style="flex:1;">PLZ / Ort ändern</span>
             <span id="cityShort" style="font-size:11px;color:var(--bio-muted);"></span>
             <span class="arrow">›</span>
           </div>
@@ -956,7 +1000,9 @@
 <script>
 /* =====================================================
    KISTE – Vollversion
-   Sichtbarkeit fest auf 24 Stunden begrenzt
+   Sichtbarkeit fest auf 24 Stunden begrenzt.
+   Region über PLZ (nicht nächste Großstadt).
+   Radius-Filter 1–25 km für den Feed.
    ===================================================== */
 
 const CATEGORIES = {
@@ -972,7 +1018,7 @@ const DEFAULT_LOC = { lat: 47.5533, lng: 7.6667 };
 
 // ===== Limits & Schwellen =====
 const MAX_ITEMS = 5;
-const VISIBILITY_HOURS = 24;   // Fest: Kisten sind nur 24 Stunden sichtbar
+const VISIBILITY_HOURS = 24;
 const VISIBILITY_MS = VISIBILITY_HOURS * 60 * 60 * 1000;
 const VERIFICATIONS_NEEDED = 3;
 const NEGATIVE_REPORTS_FOR_BAN = 3;
@@ -998,19 +1044,6 @@ const VIP_MIN_ACTIVITY_POINTS = 30;
 const VIP_MAX_PER_CITY = 50;
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 
-const CITY_SIZES = {
-  'freiburg':   { name:'Freiburg im Breisgau', size:230000 },
-  'stuttgart':  { name:'Stuttgart',            size:635000 },
-  'karlsruhe':  { name:'Karlsruhe',            size:308000 },
-  'mannheim':   { name:'Mannheim',             size:311000 },
-  'heidelberg': { name:'Heidelberg',           size:160000 },
-  'heilbronn':  { name:'Heilbronn',            size:126000 },
-  'pforzheim':  { name:'Pforzheim',            size:125000 },
-  'ulm':        { name:'Ulm',                  size:126000 },
-  'badkrozingen':{ name:'Bad Krozingen',       size:19000 },
-  'default':    { name:'Deine Stadt',          size:50000 },
-};
-
 const DEMO_CITY_NAMES = [
   'Lena M.','Felix W.','Sara K.','Jonas B.','Marie L.','Tim R.','Nina H.',
   'Paul S.','Emma T.','Luca F.','Mia G.','Ben D.','Lea P.','Max V.','Ida N.',
@@ -1028,14 +1061,13 @@ const REPORT_REASONS = [
 
 const state = {
   items: [],
-  reports: [],
   user: null,
   view: 'feed',
   filter: 'all',
   search: '',
+  radiusKm: 5,
   draft: { photo: null, category: 'other', lat: null, lng: null },
   isRegistering: false,
-  lastGPS: null,
   userLat: null,
   userLng: null,
   userAccuracy: null,
@@ -1044,21 +1076,17 @@ const state = {
 };
 
 /* ===== Storage ===== */
-const LS_USERS   = 'kiste.users.v9';
-const LS_SESSION = 'kiste.session.v9';
-const LS_ITEMS   = 'kiste.items.v9';
-const LS_REPORTS = 'kiste.reports.v9';
-const LS_ESCALATIONS = 'kiste.escalations.v9';
-const LS_FLAGGED = 'kiste.flagged.v9';
+const LS_USERS   = 'kiste.users.v10';
+const LS_SESSION = 'kiste.session.v10';
+const LS_ITEMS   = 'kiste.items.v10';
+const LS_ESCALATIONS = 'kiste.escalations.v10';
+const LS_FLAGGED = 'kiste.flagged.v10';
 const LS_LAST_VIP_CALC = 'kiste.vipCalc.v1';
 
 function lsGet(k, def){ try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : def; }catch(e){ return def; } }
 function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 
-function saveAll(){
-  lsSet(LS_ITEMS, state.items);
-  lsSet(LS_REPORTS, state.reports);
-}
+function saveAll(){ lsSet(LS_ITEMS, state.items); }
 
 /* ===== Helpers ===== */
 function makeInitials(name){
@@ -1101,6 +1129,23 @@ function getNextLevel(points){
   return null;
 }
 
+function formatDistance(m){
+  if(m == null) return '';
+  if(m < 1000) return `${Math.round(m)} m`;
+  return `${(m/1000).toFixed(1)} km`;
+}
+
+/* ===== PLZ-Helfer ===== */
+function normalizePlz(input){
+  if(!input) return 'unknown';
+  const m = String(input).match(/\b(\d{5})\b/);
+  return m ? m[1] : 'unknown';
+}
+function plzLabel(plz, cityName){
+  if(!plz || plz === 'unknown') return cityName || 'Ohne PLZ';
+  return cityName ? `${cityName} · ${plz}` : `PLZ ${plz}`;
+}
+
 /* ===== GPS ===== */
 function distanceMeters(lat1, lng1, lat2, lng2){
   const R = 6371000;
@@ -1121,11 +1166,7 @@ function getCurrentPosition(){
         accuracy: pos.coords.accuracy,
       }),
       err => reject(err),
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   });
 }
@@ -1143,47 +1184,65 @@ function saveUserPosition(pos){
   });
 }
 
+function getUserPos(){
+  if(state.userLat != null && state.userLng != null){
+    return { lat: state.userLat, lng: state.userLng };
+  }
+  if(state.user?.lastLat != null && state.user?.lastLng != null){
+    return { lat: state.user.lastLat, lng: state.user.lastLng };
+  }
+  return null;
+}
+
 function getEffectivePosition(){
   return getCurrentPosition().then(pos => {
     saveUserPosition(pos);
     return pos;
   }).catch(() => {
-    if(state.user?.lastLat && state.user?.lastLng){
-      return {
-        lat: state.user.lastLat,
-        lng: state.user.lastLng,
-        accuracy: state.user.lastAccuracy || 200,
-        fallback: true,
-      };
+    const u = getUserPos();
+    if(u){
+      return { ...u, accuracy: state.user?.lastAccuracy || 200, fallback: true };
     }
-    return {
-      lat: DEFAULT_LOC.lat,
-      lng: DEFAULT_LOC.lng,
-      accuracy: 500,
-      fallback: true,
-    };
+    return { lat: DEFAULT_LOC.lat, lng: DEFAULT_LOC.lng, accuracy: 500, fallback: true };
   });
 }
 
 async function geocodeAddress(address){
   if(!address) return null;
   try{
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
-    const res = await fetch(url, {
-      headers: { 'Accept': 'application/json' }
-    });
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&q=${encodeURIComponent(address)}`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
     if(!res.ok) return null;
     const data = await res.json();
     if(!data || data.length === 0) return null;
+    const a = data[0].address || {};
     return {
       lat: parseFloat(data[0].lat),
       lng: parseFloat(data[0].lon),
       displayName: data[0].display_name,
+      postcode: a.postcode || '',
+      city: a.city || a.town || a.village || a.municipality || a.hamlet || '',
+      state: a.state || '',
     };
   }catch(e){
     console.warn('Geocoding fehlgeschlagen:', e);
     return null;
   }
+}
+
+async function reverseGeocode(lat, lng){
+  try{
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lng}`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if(!res.ok) return null;
+    const data = await res.json();
+    const a = data.address || {};
+    return {
+      postcode: a.postcode || '',
+      city: a.city || a.town || a.village || a.municipality || a.hamlet || '',
+      displayName: data.display_name || '',
+    };
+  }catch(e){ return null; }
 }
 
 /* ===== Ban ===== */
@@ -1212,12 +1271,12 @@ function getMonthStart(offsetMonths = 0){
 }
 function getNextMonthStart(){ return getMonthStart(1); }
 
-function logActivity(user, type, points){
+function logActivity(user, type, points, regionKey){
   if(!user) return;
   user.activityLog = user.activityLog || [];
   user.activityLog.push({
     type, points,
-    city: user.cityKey || 'default',
+    city: regionKey || user.plz || user.cityKey || 'unknown',
     ts: Date.now(),
   });
   const cutoff = Date.now() - 2 * MONTH_MS;
@@ -1239,37 +1298,25 @@ function addPointsAndLog(amount, type){
   const u = users[state.user.email];
   if(!u) return;
   u.points = (u.points || 0) + amount;
-  logActivity(u, type, amount);
+  logActivity(u, type, amount, u.plz || u.cityKey);
   users[u.email] = u;
   saveUsers(users);
   Object.assign(state.user, u);
 }
 
-/* ===== Stadt ===== */
-function normalizeCityKey(input){
-  if(!input) return 'default';
-  const clean = input.toLowerCase()
-    .replace(/[^a-zäöüß\s]/g, '')
-    .split(/[\s,]+/)[0]
-    .trim();
-  for(const key of Object.keys(CITY_SIZES)){
-    if(key === 'default') continue;
-    if(clean.includes(key) || key.includes(clean)){
-      return key;
-    }
-  }
-  return 'default';
-}
-function getCityName(key){
-  return (CITY_SIZES[key] || CITY_SIZES.default).name;
+/* ===== PLZ-Region / VIP ===== */
+function getUserRegionKey(user){
+  if(!user) return 'unknown';
+  if(user.plz && /^\d{5}$/.test(user.plz)) return user.plz;
+  if(user.cityKey && /^\d{5}$/.test(user.cityKey)) return user.cityKey;
+  return user.cityKey || 'unknown';
 }
 
-/* ===== VIP ===== */
-function computeCityLeaderboard(cityKey){
+function computeRegionLeaderboard(regionKey){
   const users = getUsers();
   const prevMonth = -1;
   return Object.values(users)
-    .filter(u => (u.cityKey || 'default') === cityKey)
+    .filter(u => getUserRegionKey(u) === regionKey)
     .map(u => ({
       user: u,
       points: getMonthlyPoints(u, prevMonth),
@@ -1279,30 +1326,32 @@ function computeCityLeaderboard(cityKey){
     .sort((a,b) => b.points - a.points);
 }
 
-function computeVipSlots(cityKey){
+function computeVipSlots(regionKey){
   const users = getUsers();
-  const total = Object.values(users).filter(u => (u.cityKey || 'default') === cityKey).length;
+  const total = Object.values(users).filter(u => getUserRegionKey(u) === regionKey).length;
+  if(total < 10) return 0;
   const raw = Math.max(1, Math.floor(total * VIP_TOP_PERCENT));
   return Math.min(raw, VIP_MAX_PER_CITY);
 }
 
-function generateVipCode(uid, monthStart){
+function generateVipCode(uidv, monthStart){
   const d = new Date(monthStart);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
-  const suffix = (uid || '').slice(-4).toUpperCase();
+  const suffix = (uidv || '').slice(-4).toUpperCase();
   return `KISTE-VIP-${y}${m}-${suffix}`;
 }
 
-function updateVipStatusForCity(cityKey){
-  const board = computeCityLeaderboard(cityKey);
-  const slots = computeVipSlots(cityKey);
+function updateVipStatusForCity(regionKey){
+  if(!regionKey || regionKey === 'unknown') return;
+  const board = computeRegionLeaderboard(regionKey);
+  const slots = computeVipSlots(regionKey);
   const users = getUsers();
   const now = Date.now();
   const nextMonthStart = getNextMonthStart();
 
   Object.values(users).forEach(u => {
-    if((u.cityKey || 'default') !== cityKey) return;
+    if(getUserRegionKey(u) !== regionKey) return;
     if(u.isVip && u.vipUntil && u.vipUntil < now){
       u.isVip = false;
       u.vipCode = '';
@@ -1337,8 +1386,8 @@ function runVipCycleIfDue(){
   if(Date.now() - last < MONTH_MS) return;
 
   const users = getUsers();
-  const cityKeys = new Set(Object.values(users).map(u => u.cityKey || 'default'));
-  cityKeys.forEach(k => updateVipStatusForCity(k));
+  const keys = new Set(Object.values(users).map(getUserRegionKey));
+  keys.forEach(k => updateVipStatusForCity(k));
 
   lsSet(LS_LAST_VIP_CALC, Date.now());
 
@@ -1354,10 +1403,6 @@ function runVipCycleIfDue(){
 function getMyMonthlyPoints(){
   if(!state.user) return 0;
   return getMonthlyPoints(state.user, 0);
-}
-function getMyPreviousMonthPoints(){
-  if(!state.user) return 0;
-  return getMonthlyPoints(state.user, -1);
 }
 
 function isModerator(user){
@@ -1446,25 +1491,24 @@ function toast(msg, isError){
 function seedDemoItems(){
   const now = Date.now();
   const base = DEFAULT_LOC;
-  // Demo-Kisten: nur die letzten 24h
   const demos = [
     { title:'Gemüsekiste – frische Ernte', cat:'food', emoji:'🍅🥕🥬',
       desc:'Tomaten, Karotten, Salat – alles aus dem eigenen Garten.',
-      dLat:0.0012, dLng:-0.0008, addr:'Kastelbergstr. 12, Vorgarten',
+      dLat:0.0012, dLng:-0.0008, addr:'Kastelbergstr. 12, Vorgarten', plz:'79189',
       giver:'Maria K.', minAgo:12, verified:true, verifiers:['Thomas B.','Lena S.','Anna H.'] },
     { title:'Kinderbücher & Puzzle', cat:'books', emoji:'📚🧸🎲',
       desc:'Gut erhaltene Bilderbücher und zwei Holzpuzzle ab 3 Jahren.',
-      dLat:-0.0008, dLng:0.0010, addr:'Bahnhofstr. 3, Hofeingang',
+      dLat:-0.0008, dLng:0.0010, addr:'Bahnhofstr. 3, Hofeingang', plz:'79189',
       giver:'Thomas B.', minAgo:5, verified:true, verifiers:['Maria K.','Lena S.','Anna H.'] },
     { title:'Brettspiele-Sammlung', cat:'toys', emoji:'🎲♟️🃏',
       desc:'Drei gut erhaltene Brettspiele für die ganze Familie.',
-      dLat:0.0015, dLng:0.0006, addr:'Hauptstr. 42, Eingang',
+      dLat:0.0015, dLng:0.0006, addr:'Hauptstr. 42, Eingang', plz:'79189',
       giver:'Peter M.', minAgo:2, verified:false, verifiers:[] },
   ];
   return demos.map((d, i) => ({
     id: 'demo_' + i,
     title: d.title, category: d.cat, desc: d.desc, emoji: d.emoji, photo: null,
-    lat: base.lat + d.dLat, lng: base.lng + d.dLng, address: d.addr,
+    lat: base.lat + d.dLat, lng: base.lng + d.dLng, address: d.addr, plz: d.plz,
     giver: d.giver, giverInitials: makeInitials(d.giver), giverLogo: null,
     giverTrust: d.verified ? 'silver' : 'bronze',
     mine: false, ownerId: 'demo_' + i,
@@ -1482,15 +1526,13 @@ function seedDemoItems(){
   }));
 }
 
-function seedCityDemoUsers(){
+function seedPlzDemoUsers(plz, cityName){
+  if(!plz || plz === 'unknown') return;
   const users = getUsers();
-  const cityKey = state.user?.cityKey || 'default';
-  if(cityKey === 'default') return;
-
   const targetCount = 25;
   let created = 0;
   for(let i = 0; i < targetCount; i++){
-    const email = `demo_${cityKey}_${i}@kiste.demo`;
+    const email = `demo_${plz}_${i}@kiste.demo`;
     if(users[email]) continue;
 
     let basePoints;
@@ -1500,17 +1542,17 @@ function seedCityDemoUsers(){
 
     const prevMonthTs = getMonthStart(-1) + 5 * 24 * 3600000;
     const name = DEMO_CITY_NAMES[i % DEMO_CITY_NAMES.length];
-    const initials = makeInitials(name);
 
     users[email] = {
-      uid: 'demo_u_' + cityKey + '_' + i,
+      uid: 'demo_u_' + plz + '_' + i,
       email, password: hashPass('demo_' + Math.random()),
-      name, initials, logo: null,
+      name, initials: makeInitials(name), logo: null,
       verified: true,
       points: 0, confirmations: 0,
       homeAddress: '', bannedUntil: 0,
-      city: getCityName(cityKey), cityKey: cityKey,
-      activityLog: [{ type:'seed', points: basePoints, city: cityKey, ts: prevMonthTs }],
+      city: cityName || '', cityKey: plz, plz: plz,
+      activityLog: [{ type:'seed', points: basePoints, city: plz, ts: prevMonthTs }],
+      lastLat: null, lastLng: null, lastAccuracy: null, lastPositionAt: 0,
       isVip: false, vipUntil: 0, vipCode: '', vipGrantedAt: 0, vipMonthsWon: 0,
       createdAt: prevMonthTs - 30 * 24 * 3600000,
     };
@@ -1523,6 +1565,7 @@ function seedCityDemoUsers(){
    AUTH
    ===================================================== */
 function hashPass(pw){
+  // ACHTUNG: Nur Demo-Hash. Produktiv: bcrypt/argon2 serverseitig.
   let h = 0;
   for(let i = 0; i < pw.length; i++){
     h = ((h << 5) - h) + pw.charCodeAt(i);
@@ -1561,7 +1604,7 @@ function registerUser(email, password){
     verified: true,
     points: 0, confirmations: 0,
     homeAddress: '', bannedUntil: 0,
-    city: '', cityKey: 'default',
+    city: '', cityKey: 'unknown', plz: '',
     activityLog: [],
     lastLat: null, lastLng: null, lastAccuracy: null, lastPositionAt: 0,
     isVip: false, vipUntil: 0, vipCode: '', vipGrantedAt: 0, vipMonthsWon: 0,
@@ -1642,9 +1685,7 @@ authSubmit.addEventListener('click', () => {
       toast('Konto erstellt. Willkommen!');
     } else {
       user = loginUser(email, password);
-      if(isUserBanned(user)){
-        throw new Error('banned');
-      }
+      if(isUserBanned(user)) throw new Error('banned');
       toast('Willkommen zurück!');
     }
     state.user = user;
@@ -1671,9 +1712,9 @@ function logout(){
   state.user = null;
   state.userLat = null;
   state.userLng = null;
-  state.items = state.items.filter(it => !it.mine);
-  saveAll();
+  // WICHTIG: Kisten bleiben erhalten – kein Filtern!
   closeModal();
+  renderAll();
   showAuth();
 }
 
@@ -1696,6 +1737,10 @@ function hasUserNegativelyReported(item, userId){
    ===================================================== */
 async function confirmItem(itemId){
   if(!state.user){ toast('Bitte zuerst anmelden', true); return; }
+  if(isUserBanned(state.user)){
+    toast(`Dein Konto ist noch ${formatBanRemaining(getBanRemainingMs(state.user))} gesperrt.`, true);
+    return;
+  }
   const item = state.items.find(x => x.id === itemId);
   if(!item) return;
   if(item.mine){ toast('Eigene Kiste kann nicht bestätigt werden', true); return; }
@@ -1738,7 +1783,7 @@ async function confirmItem(itemId){
     const poster = Object.values(users).find(u => u.uid === item.ownerId);
     if(poster){
       poster.points = (poster.points || 0) + POINTS_POST_VERIFIED;
-      logActivity(poster, 'post_verified', POINTS_POST_VERIFIED);
+      logActivity(poster, 'post_verified', POINTS_POST_VERIFIED, getUserRegionKey(poster));
       users[poster.email] = poster;
       saveUsers(users);
       if(state.user.uid === poster.uid) Object.assign(state.user, poster);
@@ -1758,6 +1803,10 @@ async function confirmItem(itemId){
    ===================================================== */
 async function negativeReportItem(itemId){
   if(!state.user){ toast('Bitte zuerst anmelden', true); return; }
+  if(isUserBanned(state.user)){
+    toast(`Dein Konto ist noch ${formatBanRemaining(getBanRemainingMs(state.user))} gesperrt.`, true);
+    return;
+  }
   const item = state.items.find(x => x.id === itemId);
   if(!item) return;
   if(item.mine){ toast('Du kannst deine eigene Kiste nicht als fehlend melden', true); return; }
@@ -1774,7 +1823,7 @@ async function negativeReportItem(itemId){
     return;
   }
 
-  const isAtOwnHome = isUserAtOwnHome(pos, item);
+  const isAtOwnHome = await checkUserAtOwnHome(pos, item);
 
   item.negativeReports = item.negativeReports || [];
   item.negativeReports.push({
@@ -1794,8 +1843,6 @@ async function negativeReportItem(itemId){
     r.createdAt - item.createdAt <= NEGATIVE_REPORT_WINDOW_MS
   );
 
-  let message = `Danke für die Meldung. ${reportsInWindow.length}/${NEGATIVE_REPORTS_FOR_BAN} Meldungen.`;
-
   if(reportsInWindow.length >= NEGATIVE_REPORTS_FOR_BAN){
     const anyAtOwnHome = reportsInWindow.some(r => r.isAtOwnHome);
 
@@ -1803,15 +1850,13 @@ async function negativeReportItem(itemId){
       sendEscalationEmail(item, reportsInWindow);
       item.bannedAt = 0;
       item.flaggedForSupport = true;
-      message = 'Die Meldungen wurden an unseren Support eskaliert. Vielen Dank!';
-      toast(message);
+      toast('Die Meldungen wurden an unseren Support eskaliert. Vielen Dank!');
     } else {
       banItemOwner(item, reportsInWindow);
-      message = 'Die Kiste wurde deaktiviert. Der Ersteller wurde für 24 Std. gesperrt.';
-      toast(message, true);
+      toast('Die Kiste wurde deaktiviert. Der Ersteller wurde für 24 Std. gesperrt.', true);
     }
   } else {
-    toast(message);
+    toast(`Danke für die Meldung. ${reportsInWindow.length}/${NEGATIVE_REPORTS_FOR_BAN} Meldungen.`);
   }
 
   saveAll();
@@ -1819,12 +1864,37 @@ async function negativeReportItem(itemId){
   renderAll();
 }
 
-function isUserAtOwnHome(pos, item){
-  if(!state.user || !state.user.homeAddress) return false;
-  const home = (state.user.homeAddress || '').toLowerCase().trim();
-  const boxAddr = (item.address || '').toLowerCase().trim();
-  if(!home || !boxAddr) return false;
-  return boxAddr.includes(home) || home.includes(boxAddr.split(',')[0].trim());
+async function checkUserAtOwnHome(pos, item){
+  if(!state.user) return false;
+  const users = getUsers();
+  const me = users[state.user.email];
+  if(!me) return false;
+
+  // 1) Wenn wir Koordinaten der eigenen Adresse haben: Distanz prüfen
+  if(me.homeLat != null && me.homeLng != null){
+    const d = distanceMeters(pos.lat, pos.lng, me.homeLat, me.homeLng);
+    const boxD = distanceMeters(item.lat, item.lng, me.homeLat, me.homeLng);
+    return d <= GPS_HOME_RADIUS_M && boxD <= GPS_HOME_RADIUS_M;
+  }
+
+  // 2) Fallback: Adressvergleich (normalisiert)
+  if(!me.homeAddress) return false;
+  const norm = s => String(s||'').toLowerCase()
+    .replace(/[.,]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const home = norm(me.homeAddress);
+  const box = norm(item.address);
+  if(!home || !box) return false;
+
+  // Straße + Hausnummer isolieren
+  const streetNum = s => {
+    const m = s.match(/([a-zäöüß]+(?:str|straße|strasse|weg|platz|gasse|allee|ring|damm)\.?\s*\d+[a-z]?)/);
+    return m ? m[1].replace(/\s+/g, '') : null;
+  };
+  const a = streetNum(home);
+  const b = streetNum(box);
+  return !!a && a === b;
 }
 
 function sendEscalationEmail(item, reports){
@@ -1852,12 +1922,14 @@ function sendEscalationEmail(item, reports){
 
 function banItemOwner(item, reports){
   item.bannedAt = Date.now();
+  item.bannedReason = 'Kiste wurde ' + reports.length + '× als nicht vorhanden gemeldet';
+  item.bannedByMod = 'System';
 
   const users = getUsers();
   const owner = Object.values(users).find(u => u.uid === item.ownerId);
   if(owner){
     owner.bannedUntil = Date.now() + BAN_DURATION_MS;
-    owner.lastBanReason = 'Kiste wurde 3× als nicht vorhanden gemeldet';
+    owner.lastBanReason = item.bannedReason;
     owner.lastBanAt = Date.now();
     users[owner.email] = owner;
     saveUsers(users);
@@ -1870,23 +1942,45 @@ function banItemOwner(item, reports){
 }
 
 /* =====================================================
-   FEED RENDER
+   FEED RENDER + RADIUS
    ===================================================== */
 function getVisibleItems(){
   const q = state.search.trim().toLowerCase();
-  return state.items
+  const userPos = getUserPos();
+  const radiusM = state.radiusKm * 1000;
+
+  const visible = state.items
     .filter(it => !isExpired(it))
     .filter(it => state.filter === 'all' || it.category === state.filter)
     .filter(it => {
       if(!q) return true;
-      return (it.title + ' ' + (it.desc||'') + ' ' + (it.address||'') + ' ' + it.giver).toLowerCase().includes(q);
-    })
-    .sort((a,b) => {
-      const aActive = isItemActive(a) && !isItemBanned(a) ? 1 : 0;
-      const bActive = isItemActive(b) && !isItemBanned(b) ? 1 : 0;
-      if(aActive !== bActive) return bActive - aActive;
-      return b.createdAt - a.createdAt;
+      return (it.title + ' ' + (it.desc||'') + ' ' + (it.address||'')
+        + ' ' + it.giver + ' ' + (it.plz||'')).toLowerCase().includes(q);
     });
+
+  // Distanz immer berechnen, wenn Standort bekannt
+  visible.forEach(it => {
+    if(userPos){
+      it._distance = distanceMeters(userPos.lat, userPos.lng, it.lat, it.lng);
+    } else {
+      it._distance = null;
+    }
+  });
+
+  const filtered = userPos
+    ? visible.filter(it => it._distance <= radiusM)
+    : visible;
+
+  return filtered.sort((a,b) => {
+    const aActive = isItemActive(a) && !isItemBanned(a) ? 1 : 0;
+    const bActive = isItemActive(b) && !isItemBanned(b) ? 1 : 0;
+    if(aActive !== bActive) return bActive - aActive;
+
+    if(userPos && a._distance != null && b._distance != null){
+      return a._distance - b._distance;
+    }
+    return b.createdAt - a.createdAt;
+  });
 }
 
 function trustBadgeHtml(trust){
@@ -1931,6 +2025,13 @@ function itemCardHtml(it, opts = {}){
       <div class="progress"><div class="progress-fill" style="width:${(verCount/VERIFICATIONS_NEEDED)*100}%"></div></div>
     </div>` : '';
 
+  const distHtml = it._distance != null
+    ? `<span class="distance-pill">📍 ${formatDistance(it._distance)}</span>`
+    : '';
+  const plzHtml = it.plz && it.plz !== 'unknown'
+    ? `<span class="plz-pill">${escapeHtml(it.plz)}</span>`
+    : '';
+
   return `
     <div class="card ${pending?'pending':''} ${banned?'banned':''}" data-id="${it.id}" style="${expired?'opacity:.55':''}">
       <div class="card-img ${blurClass}" style="${blurClass?'':bgStyle}">
@@ -1941,7 +2042,7 @@ function itemCardHtml(it, opts = {}){
         ${stampHtml}
       </div>
       <div class="card-body">
-        <h3>${escapeHtml(it.title)}</h3>
+        <h3>${escapeHtml(it.title)} ${distHtml}${plzHtml}</h3>
         <div class="location">${escapeHtml(it.address || 'Standort unbekannt')}</div>
         ${verifyBar}
         <div class="card-footer">
@@ -1989,12 +2090,16 @@ function renderChips(){
 function renderFeed(){
   const list = document.getElementById('feedList');
   const items = getVisibleItems();
+  const hasPos = getUserPos() != null;
+
   const tipHtml = `
     <div class="tip">
       <span>⏱</span>
       <div>
         <strong>24-Stunden-Kisten</strong>
-        Alle Kisten laufen automatisch nach <b>24 Stunden</b> ab. Danach werden Foto und Eintrag gelöscht.
+        ${hasPos
+          ? `Zeige Kisten im Umkreis von <b>${state.radiusKm} km</b>. Alle laufen nach <b>24 Stunden</b> automatisch ab.`
+          : `Alle Kisten laufen nach <b>24 Stunden</b> automatisch ab. Aktiviere 🎯, um nach Umkreis zu filtern.`}
       </div>
     </div>`;
 
@@ -2002,8 +2107,8 @@ function renderFeed(){
     list.innerHTML = tipHtml + `
       <div class="empty">
         <span class="emo">🌱</span>
-        <strong>Gerade keine Kisten hier</strong>
-        Schau später wieder vorbei oder teile selbst etwas.
+        <strong>${hasPos ? `Keine Kisten im Umkreis von ${state.radiusKm} km` : 'Gerade keine Kisten hier'}</strong>
+        ${hasPos ? 'Erweitere den Radius oder schau später wieder vorbei.' : 'Schau später wieder vorbei oder teile selbst etwas.'}
       </div>`;
     return;
   }
@@ -2014,13 +2119,16 @@ function renderFeed(){
 
   let html = tipHtml;
   if(activeItems.length){
-    html += `<div class="section-title">In deiner Nähe</div>` + activeItems.map(it => itemCardHtml(it)).join('');
+    html += `<div class="section-title">${hasPos ? `In deiner Nähe (${state.radiusKm} km)` : 'In deiner Nähe'}</div>` +
+      activeItems.map(it => itemCardHtml(it)).join('');
   }
   if(pendingItems.length){
-    html += `<div class="section-title">⏳ Wartet auf Bestätigung</div>` + pendingItems.map(it => itemCardHtml(it)).join('');
+    html += `<div class="section-title">⏳ Wartet auf Bestätigung</div>` +
+      pendingItems.map(it => itemCardHtml(it)).join('');
   }
   if(bannedItems.length){
-    html += `<div class="section-title">🚫 Deaktiviert</div>` + bannedItems.map(it => itemCardHtml(it)).join('');
+    html += `<div class="section-title">🚫 Deaktiviert</div>` +
+      bannedItems.map(it => itemCardHtml(it)).join('');
   }
   list.innerHTML = html;
   bindCards(list);
@@ -2087,7 +2195,11 @@ function renderProfile(){
 function updateCityMenu(){
   const cityShort = document.getElementById('cityShort');
   if(cityShort && state.user){
-    cityShort.textContent = state.user.city ? state.user.city : 'nicht gesetzt';
+    const plz = state.user.plz || '';
+    const city = state.user.city || '';
+    cityShort.textContent = plz
+      ? (city ? `${city} · ${plz}` : `PLZ ${plz}`)
+      : (city || 'nicht gesetzt');
   }
   const homeShort = document.getElementById('homeAddressShort');
   if(homeShort && state.user){
@@ -2178,6 +2290,13 @@ function openDetail(id){
   const alreadyConfirmed = !it.mine && hasUserConfirmed(it, state.user.uid);
   const amMod = isModerator(state.user);
 
+  const distLine = it._distance != null
+    ? `<div class="modal-row"><span>📏</span> Entfernung: <strong>${formatDistance(it._distance)}</strong></div>`
+    : '';
+  const plzLine = it.plz && it.plz !== 'unknown'
+    ? `<div class="modal-row"><span>📮</span> PLZ <strong>${escapeHtml(it.plz)}</strong></div>`
+    : '';
+
   const verifiersHtml = (it.verifications && it.verifications.length)
     ? `<div class="verify-list">
         <div class="section-title" style="margin:0 0 6px;">Vor-Ort bestätigt von</div>
@@ -2259,6 +2378,8 @@ function openDetail(id){
       </div>
       ${it.desc ? `<p class="desc">${escapeHtml(it.desc)}</p>` : ''}
       <div class="modal-row"><span>📍</span><strong>${escapeHtml(it.address || 'Standort unbekannt')}</strong></div>
+      ${plzLine}
+      ${distLine}
       <div class="modal-row"><span>👤</span> Geteilt von <strong>${escapeHtml(it.giver)}</strong></div>
       <div class="modal-row"><span>🕒</span> ${timeAgo(it.createdAt)} · läuft automatisch nach 24 Std. ab</div>
 
@@ -2365,13 +2486,6 @@ function openReportSheet(itemId){
     const sel = sheet.querySelector('input[name="reportReason"]:checked');
     if(!sel){ toast('Bitte einen Grund wählen', true); return; }
     const reason = sel.value;
-    state.reports.push({
-      id: uid(),
-      itemId,
-      reporterId: state.user.uid,
-      reason,
-      createdAt: Date.now(),
-    });
 
     const severe = ['Anstößiger oder illegaler Inhalt', 'Persönlichkeitsrechtsverletzung'].includes(reason);
     if(severe){
@@ -2397,17 +2511,20 @@ function renderRanking(){
     return;
   }
 
-  const cityKey = state.user.cityKey || 'default';
-  const cityName = getCityName(cityKey);
-  const board = computeCityLeaderboard(cityKey);
-  const slots = computeVipSlots(cityKey);
-  const totalCityUsers = Object.values(getUsers()).filter(u => (u.cityKey || 'default') === cityKey).length;
+  const regionKey = getUserRegionKey(state.user);
+  const regionLabel = plzLabel(
+    /^\d{5}$/.test(regionKey) ? regionKey : '',
+    state.user.city || ''
+  );
+  const board = computeRegionLeaderboard(regionKey);
+  const slots = computeVipSlots(regionKey);
+  const totalRegionUsers = Object.values(getUsers()).filter(u => getUserRegionKey(u) === regionKey).length;
 
   const myIndex = board.findIndex(x => x.user.uid === state.user.uid);
 
   let html = `
     <div class="section-title" style="margin-top:14px;">
-      ${escapeHtml(cityName)} · ${totalCityUsers} Nutzer · ${slots} VIP-Platz${slots===1?'':'e'}
+      ${escapeHtml(regionLabel)} · ${totalRegionUsers} Nutzer · ${slots} VIP-Platz${slots===1?'':'e'}
     </div>`;
 
   if(state.user.isVip){
@@ -2463,7 +2580,7 @@ function renderRanking(){
     html += `
       <div class="info-box" style="margin-top:12px;">
         <strong>Deine Position</strong>
-        Du bist noch nicht in den Top ${slots}. Sammle mindestens ${VIP_MIN_ACTIVITY_POINTS} Punkte im Vormonat, um aufzusteigen.
+        Du bist noch nicht in den Top ${slots || '?'}. Sammle mindestens ${VIP_MIN_ACTIVITY_POINTS} Punkte im Vormonat, um aufzusteigen.
       </div>`;
   } else {
     html += `
@@ -2507,29 +2624,22 @@ function renderModerator(){
       <div class="empty">
         <span class="emo">🛡</span>
         <strong>Kein Zugriff</strong>
-        Nur VIP-Moderatoren können dieses Dashboard öffnen. Werde in den Top 10 % deiner Stadt aktiv.
+        Nur VIP-Moderatoren können dieses Dashboard öffnen. Werde in den Top 10 % deiner PLZ-Region aktiv.
       </div>`;
     return;
   }
 
-  const cityKey = state.user.cityKey || 'default';
-  const cityName = getCityName(cityKey);
-  const escalations = getEscalations().filter(e => {
-    if(e.status !== 'open') return false;
-    const item = state.items.find(i => i.id === e.itemId);
-    if(!item) return true;
-    const itemCity = normalizeCityKey(item.address || '');
-    return itemCity === cityKey || itemCity === 'default';
-  });
+  const regionKey = getUserRegionKey(state.user);
+  const regionLabel = plzLabel(/^\d{5}$/.test(regionKey) ? regionKey : '', state.user.city || '');
 
+  const escalations = getEscalations().filter(e => e.status === 'open');
   const flagged = getFlaggedUsers().filter(f => f.active);
-
   const negReported = state.items.filter(it => getNegativeReports(it).length > 0 && !isItemBanned(it));
 
   let html = `
     <div class="mod-header">
       <h3>🛡 Moderator-Dashboard</h3>
-      <p>${escapeHtml(cityName)} · Du bist einer der Top-10 %-Moderatoren. Danke für deinen Einsatz!</p>
+      <p>${escapeHtml(regionLabel)} · Du bist einer der Top-10 %-Moderatoren. Danke für deinen Einsatz!</p>
     </div>
 
     <div class="mod-stat-grid">
@@ -2556,7 +2666,7 @@ function renderModerator(){
 
   if(state.modTab === 'escalations'){
     if(escalations.length === 0){
-      html += `<div class="info-box"><strong>✓ Keine offenen Eskalationen</strong>Alles sauber in deiner Stadt.</div>`;
+      html += `<div class="info-box"><strong>✓ Keine offenen Eskalationen</strong>Alles sauber in deiner Region.</div>`;
     } else {
       escalations.forEach(esc => {
         html += `
@@ -2580,7 +2690,7 @@ function renderModerator(){
 
   if(state.modTab === 'flagged'){
     if(flagged.length === 0){
-      html += `<div class="info-box"><strong>✓ Keine markierten Nutzer</strong>In deiner Stadt ist alles ruhig.</div>`;
+      html += `<div class="info-box"><strong>✓ Keine markierten Nutzer</strong>In deiner Region ist alles ruhig.</div>`;
     } else {
       flagged.forEach(f => {
         html += `
@@ -2699,9 +2809,9 @@ function renderModerator(){
 }
 
 /* =====================================================
-   KARTE – Leaflet + OpenStreetMap
+   KARTE – Leaflet + OpenStreetMap + Radius-Kreis
    ===================================================== */
-let map = null, markersLayer = null, userMarker = null;
+let map = null, markersLayer = null, userMarker = null, radiusCircle = null;
 
 function initMap(){
   if(map) return;
@@ -2725,19 +2835,13 @@ function initMap(){
 function updateMap(){
   initMap();
 
-  let userLat = state.userLat;
-  let userLng = state.userLng;
-  if(userLat == null && state.user?.lastLat){
-    userLat = state.user.lastLat;
-    userLng = state.user.lastLng;
-  }
-
+  const u = getUserPos();
   let center = [DEFAULT_LOC.lat, DEFAULT_LOC.lng];
   let zoom = 14;
 
-  if(userLat != null && userLng != null){
-    center = [userLat, userLng];
-    zoom = 16;
+  if(u){
+    center = [u.lat, u.lng];
+    zoom = 14;
   } else {
     const firstActive = state.items.find(it =>
       !isExpired(it) && isItemActive(it) && !isItemBanned(it)
@@ -2750,38 +2854,128 @@ function updateMap(){
   map.setView(center, zoom);
   markersLayer.clearLayers();
   if(userMarker){ map.removeLayer(userMarker); userMarker = null; }
+  if(radiusCircle){ map.removeLayer(radiusCircle); radiusCircle = null; }
 
-  if(userLat != null && userLng != null){
+  if(u){
     const userIcon = L.divIcon({
       className: '',
       html: '<div class="user-marker" style="width:18px;height:18px;"></div>',
       iconSize: [18,18], iconAnchor: [9,9],
     });
-    userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(map);
+    userMarker = L.marker([u.lat, u.lng], { icon: userIcon }).addTo(map);
     userMarker.bindPopup(`
       <div class="popup-title">Dein Standort</div>
       <div class="popup-loc">Genauigkeit: ±${Math.round(state.userAccuracy || state.user?.lastAccuracy || 0)} m</div>
     `);
+
+    // Radius-Kreis
+    radiusCircle = L.circle([u.lat, u.lng], {
+      radius: state.radiusKm * 1000,
+      color: '#3f7d4e',
+      weight: 1.5,
+      fillColor: '#5ea86a',
+      fillOpacity: 0.08,
+      dashArray: '6 6',
+    }).addTo(map);
   }
 
-  state.items.filter(it => !isExpired(it) && isItemActive(it) && !isItemBanned(it)).forEach(it => {
-    const cat = CATEGORIES[it.category] || CATEGORIES.other;
-    const icon = L.divIcon({
-      className: '',
-      html: `<div style="width:32px;height:32px;border-radius:50%;background:${cat.color};color:#fff;
-        display:flex;align-items:center;justify-content:center;font-size:16px;
-        box-shadow:0 3px 10px rgba(0,0,0,.28);border:2px solid #fff;">${cat.emoji}</div>`,
-      iconSize: [32,32], iconAnchor: [16,16],
+  state.items
+    .filter(it => !isExpired(it) && isItemActive(it) && !isItemBanned(it))
+    .filter(it => {
+      if(!u) return true;
+      const d = distanceMeters(u.lat, u.lng, it.lat, it.lng);
+      return d <= state.radiusKm * 1000;
+    })
+    .forEach(it => {
+      const cat = CATEGORIES[it.category] || CATEGORIES.other;
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="width:32px;height:32px;border-radius:50%;background:${cat.color};color:#fff;
+          display:flex;align-items:center;justify-content:center;font-size:16px;
+          box-shadow:0 3px 10px rgba(0,0,0,.28);border:2px solid #fff;">${cat.emoji}</div>`,
+        iconSize: [32,32], iconAnchor: [16,16],
+      });
+      const marker = L.marker([it.lat, it.lng], { icon }).addTo(markersLayer);
+      marker.bindPopup(`
+        <div class="popup-title">${escapeHtml(it.title)}</div>
+        <div class="popup-cat">${cat.emoji} ${cat.label} · ✓ Verifiziert</div>
+        <div class="popup-loc">📍 ${escapeHtml(it.address || '')}</div>
+        ${it.plz ? `<div class="popup-loc">📮 ${escapeHtml(it.plz)}</div>` : ''}
+        <div class="popup-loc">⏱ ${expiresIn(it.expiresAt)}</div>
+      `);
     });
-    const marker = L.marker([it.lat, it.lng], { icon }).addTo(markersLayer);
-    marker.bindPopup(`
-      <div class="popup-title">${escapeHtml(it.title)}</div>
-      <div class="popup-cat">${cat.emoji} ${cat.label} · ✓ Verifiziert</div>
-      <div class="popup-loc">📍 ${escapeHtml(it.address || '')}</div>
-      <div class="popup-loc">⏱ ${expiresIn(it.expiresAt)}</div>
-    `);
-  });
+
   setTimeout(() => map.invalidateSize(), 100);
+}
+
+/* =====================================================
+   RADIUS-BAR
+   ===================================================== */
+function initRadiusBar(){
+  const slider = document.getElementById('radiusSlider');
+  const valEl = document.getElementById('radiusVal');
+  const gpsBtn = document.getElementById('radiusGpsBtn');
+
+  function paint(){
+    const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+    slider.style.setProperty('--pct', pct + '%');
+    valEl.textContent = slider.value + ' km';
+  }
+  slider.value = state.radiusKm;
+  paint();
+
+  slider.addEventListener('input', () => {
+    state.radiusKm = parseInt(slider.value, 10);
+    paint();
+    renderFeed();
+    if(state.view === 'map') updateMap();
+  });
+
+  gpsBtn.addEventListener('click', async () => {
+    gpsBtn.disabled = true;
+    const oldText = gpsBtn.textContent;
+    gpsBtn.textContent = '…';
+    try{
+      const pos = await getCurrentPosition();
+      saveUserPosition(pos);
+
+      // PLZ automatisch nachziehen
+      const rev = await reverseGeocode(pos.lat, pos.lng);
+      if(rev && rev.postcode){
+        const oldPlz = state.user.plz;
+        updateCurrentUser({
+          plz: rev.postcode,
+          city: rev.city || state.user.city || '',
+          cityKey: rev.postcode,
+        });
+        if(oldPlz !== rev.postcode){
+          seedPlzDemoUsers(rev.postcode, rev.city || '');
+          updateVipStatusForCity(rev.postcode);
+        }
+      }
+
+      gpsBtn.classList.add('active');
+      toast('Standort aktiv 📍 Filter nach Entfernung');
+      renderAll();
+    }catch(e){
+      toast('Standort nicht verfügbar', true);
+    } finally {
+      gpsBtn.disabled = false;
+      gpsBtn.textContent = oldText;
+      updateRadiusUI();
+    }
+  });
+
+  updateRadiusUI();
+}
+
+function updateRadiusUI(){
+  const gpsBtn = document.getElementById('radiusGpsBtn');
+  const hint = document.getElementById('radiusHint');
+  if(!gpsBtn || !hint) return;
+  const hasPos = getUserPos() != null;
+  gpsBtn.classList.toggle('active', hasPos);
+  hint.style.display = hasPos ? 'none' : 'block';
 }
 
 /* =====================================================
@@ -2824,7 +3018,7 @@ function switchView(name, opts = {}){
   if(name === 'map') setTimeout(updateMap, 50);
   if(name === 'mine') renderMine();
   if(name === 'profile') renderProfile();
-  if(name === 'feed') renderFeed();
+  if(name === 'feed'){ renderFeed(); updateRadiusUI(); }
   if(name === 'share') renderBanBanner();
   if(name === 'ranking') renderRanking();
   if(name === 'moderator') renderModerator();
@@ -2851,8 +3045,6 @@ function initForm(){
       picker.querySelectorAll('.cat-opt').forEach(x => x.classList.toggle('selected', x === el));
     });
   });
-
-  // Kein Duration-Picker mehr – Sichtbarkeit ist fix 24h
 
   const photoInput = document.getElementById('photoInput');
   const photoFile = document.getElementById('photoFile');
@@ -2893,23 +3085,11 @@ function initForm(){
 
       const addr = document.getElementById('fAddr');
       if(!addr.value){
-        try{
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`,
-            { headers: { 'Accept': 'application/json' } }
-          );
-          if(res.ok){
-            const data = await res.json();
-            if(data && data.display_name){
-              const parts = data.display_name.split(',').slice(0,2).map(s => s.trim());
-              addr.value = parts.join(', ');
-            } else {
-              addr.value = `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
-            }
-          } else {
-            addr.value = `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
-          }
-        }catch(e){
+        const rev = await reverseGeocode(pos.lat, pos.lng);
+        if(rev){
+          const parts = (rev.displayName || '').split(',').slice(0,2).map(s => s.trim());
+          addr.value = parts.join(', ') || `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+        } else {
           addr.value = `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
         }
       }
@@ -2971,6 +3151,13 @@ async function submitItem(){
     lng = pos.lng;
   }
 
+  // PLZ bestimmen: erst aus Adresse, sonst per Reverse-Geocoding
+  let plz = normalizePlz(addr);
+  if(plz === 'unknown' && lat != null && lng != null){
+    const rev = await reverseGeocode(lat, lng);
+    if(rev && rev.postcode) plz = rev.postcode;
+  }
+
   btn.disabled = false;
   btn.textContent = oldText;
 
@@ -2985,13 +3172,14 @@ async function submitItem(){
     title, category: state.draft.category, desc,
     emoji: null, photo: state.draft.photo,
     lat, lng, address: addr || 'Aktueller Standort',
+    plz,
     giver: state.user.name,
     giverInitials: state.user.initials,
     giverLogo: state.user.logo,
     giverTrust: getTrustLevel(state.user.points || 0).badge,
     mine: true, ownerId: state.user.uid,
     createdAt: now,
-    expiresAt: now + VISIBILITY_MS,   // immer 24 Std.
+    expiresAt: now + VISIBILITY_MS,
     verifications: [],
     negativeReports: [],
     bannedAt: 0,
@@ -3038,15 +3226,15 @@ const LEGAL_CONTENT = {
     79189 Bad Krozingen<br>
     E-Mail: mathias1984@yahoo.de</p>
     <h3>2. Erhobene Daten</h3>
-    <p>E-Mail, Profilname, Profilbild, <strong>GPS-Standortdaten</strong>, Fotos, Bewertungen, Vertrauenspunkte, Stadt.</p>
+    <p>E-Mail, Profilname, Profilbild, <strong>GPS-Standortdaten</strong>, Fotos, Bewertungen, Vertrauenspunkte, PLZ-Region.</p>
     <h3>3. Zweck</h3>
-    <p>App-Funktionen, Missbrauchsprävention durch GPS-Verifizierung, VIP-/Moderator-Berechnung, Vertragserfüllung.</p>
+    <p>App-Funktionen, Missbrauchsprävention durch GPS-Verifizierung, Umkreisfilter, VIP-/Moderator-Berechnung, Vertragserfüllung.</p>
     <h3>4. Rechtsgrundlage</h3>
     <p>Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und lit. f DSGVO (berechtigtes Interesse).</p>
     <h3>5. Speicherdauer</h3>
     <p>Kisten und Fotos werden nach <strong>24 Stunden</strong> automatisch gelöscht. Account-Daten werden bis zur Löschung des Kontos gespeichert. GPS-Daten werden nur zur Verifikation und Anzeige verwendet.</p>
     <h3>6. Karten</h3>
-    <p>Zur Darstellung der Karte nutzen wir den Dienst <strong>OpenStreetMap</strong> (OpenStreetMap Foundation, St John's Innovation Centre, Cowley Road, Cambridge, CB4 0WS, United Kingdom). Beim Laden der Karte werden IP-Adresse und Kartenausschnitt an OpenStreetMap übertragen. Zur Umwandlung von Adressen in Koordinaten nutzen wir den Dienst <strong>Nominatim</strong>. Weitere Informationen: openstreetmap.org/copyright.</p>
+    <p>Zur Darstellung der Karte nutzen wir den Dienst <strong>OpenStreetMap</strong> (OpenStreetMap Foundation, St John's Innovation Centre, Cowley Road, Cambridge, CB4 0WS, United Kingdom). Beim Laden der Karte werden IP-Adresse und Kartenausschnitt an OpenStreetMap übertragen. Zur Umwandlung von Adressen in Koordinaten und PLZ nutzen wir den Dienst <strong>Nominatim</strong>. Weitere Informationen: openstreetmap.org/copyright.</p>
     <h3>7. Weitergabe</h3>
     <p>Hosting-Dienstleister, Zahlungsdienstleister (Play Store), OpenStreetMap.</p>
     <h3>8. Ihre Rechte</h3>
@@ -3062,7 +3250,7 @@ const LEGAL_CONTENT = {
     <h3>4. Sperrung bei Missbrauch</h3>
     <p>Bei 3 unabhängigen Meldungen „Kiste nicht vorhanden" innerhalb der ersten Stunde wird der Ersteller für 24 Stunden gesperrt. Ist die Kiste an der eigenen Adresse des Melders, wird der Fall an den Support eskaliert.</p>
     <h3>5. VIP-Status und Moderation</h3>
-    <p>Die aktivsten 10 % der Nutzer pro Stadt werden monatlich zu VIP-Moderatoren ernannt. Sie erhalten einen Gratis-Abo-Code für den Folgemonat und erweiterte Moderationsrechte. Missbrauch führt zum sofortigen Verlust.</p>
+    <p>Die aktivsten 10 % der Nutzer pro PLZ-Region werden monatlich zu VIP-Moderatoren ernannt. Sie erhalten einen Gratis-Abo-Code für den Folgemonat und erweiterte Moderationsrechte. Missbrauch führt zum sofortigen Verlust.</p>
     <h3>6. Preis</h3>
     <p>9,99 € pro Monat inkl. 19 % MwSt., monatlich kündbar.</p>
     <h3>7. Widerrufsrecht</h3>
@@ -3102,13 +3290,16 @@ function showTrustInfo(){
     <p>Höchste Stufe.</p>
 
     <h2>VIP & Moderator</h2>
-    <p>Die aktivsten <b>10 % pro Stadt</b> werden monatlich automatisch zu <b>VIP-Moderatoren</b> ernannt:</p>
+    <p>Die aktivsten <b>10 % pro PLZ-Region</b> werden monatlich automatisch zu <b>VIP-Moderatoren</b> ernannt:</p>
     <ul>
       <li>Gratis-Abo-Code für den Folgemonat</li>
       <li>Erweiterte Moderationsrechte (Kisten entfernen, Nutzer verwarnen)</li>
       <li>Zugang zum Moderator-Dashboard mit Eskalationen</li>
       <li>Goldenes VIP-Badge im Profil</li>
     </ul>
+
+    <h2>PLZ-basierte Region</h2>
+    <p>Regionen werden über die <b>Postleitzahl</b> zugeordnet – kleine Ortschaften werden direkt integriert, ohne sie einer größeren Stadt zuzuschlagen.</p>
 
     <h2>So sammelst du Punkte</h2>
     <ul>
@@ -3139,6 +3330,7 @@ function renderAll(){
   renderMine();
   renderProfile();
   renderLogo();
+  updateRadiusUI();
   if(state.view === 'map') updateMap();
   if(state.view === 'share') renderBanBanner();
   if(state.view === 'ranking') renderRanking();
@@ -3147,62 +3339,110 @@ function renderAll(){
 
 function cleanupExpired(){
   const before = state.items.length;
-  state.items = state.items.filter(it => !isExpired(it) || it.mine);
+  // Auch eigene Kisten werden nach 24h entfernt – keine Ausnahme.
+  state.items = state.items.filter(it => !isExpired(it));
   if(state.items.length !== before){
     saveAll();
     renderAll();
   }
 }
 
-function editCity(){
-  const current = state.user?.city || '';
-  const c = prompt('In welcher Stadt bist du aktiv? (z. B. Bad Krozingen, Freiburg)', current);
-  if(c === null) return;
-  const city = c.trim().slice(0,60);
-  const key = normalizeCityKey(city);
+/* =====================================================
+   Profil-Aktionen
+   ===================================================== */
+async function editLocation(){
+  const current = state.user?.plz && state.user.plz !== 'unknown'
+    ? `${state.user.plz}${state.user.city ? ' (' + state.user.city + ')' : ''}`
+    : (state.user?.city || '');
+  const input = prompt(
+    'PLZ oder Ort eingeben – kleine Orte werden direkt übernommen:\n(z. B. „79189" oder „Bad Krozingen")',
+    current
+  );
+  if(input === null) return;
+  const val = input.trim();
+  if(!val) return;
+
+  let plz = normalizePlz(val);
+  let cityName = '';
+
+  const geo = await geocodeAddress(val);
+  if(geo){
+    if(geo.postcode) plz = geo.postcode;
+    cityName = geo.city || '';
+  }
+
+  if(plz === 'unknown' && !cityName){
+    toast('Konnte PLZ/Ort nicht auflösen', true);
+    return;
+  }
+
   updateCurrentUser({
-    city: city || getCityName(key),
-    cityKey: key,
+    plz: plz,
+    city: cityName || state.user.city || '',
+    cityKey: plz,
   });
-  seedCityDemoUsers();
-  updateVipStatusForCity(key);
+
+  if(plz !== 'unknown'){
+    seedPlzDemoUsers(plz, cityName || state.user.city || '');
+    updateVipStatusForCity(plz);
+  }
   renderAll();
-  toast(`Stadt gesetzt: ${getCityName(key)}`);
+  toast(`Region gesetzt: ${plzLabel(plz === 'unknown' ? '' : plz, cityName)}`);
 }
 
-function editHomeAddress(){
+async function editHomeAddress(){
   const a = prompt('Deine eigene Adresse (für Ausnahme bei „Kiste fehlt"-Meldungen):', state.user?.homeAddress || '');
   if(a === null) return;
-  updateCurrentUser({ homeAddress: a.trim() });
+  const addr = a.trim();
+  let homeLat = null, homeLng = null;
+  if(addr){
+    const geo = await geocodeAddress(addr);
+    if(geo){ homeLat = geo.lat; homeLng = geo.lng; }
+  }
+  updateCurrentUser({
+    homeAddress: addr,
+    homeLat, homeLng,
+  });
   renderAll();
-  toast(a.trim() ? 'Adresse gespeichert' : 'Adresse entfernt');
+  toast(addr ? 'Adresse gespeichert' : 'Adresse entfernt');
 }
 
 /* =====================================================
    INIT
    ===================================================== */
+function migrateOldUserData(){
+  const users = getUsers();
+  let changed = false;
+  Object.values(users).forEach(u => {
+    // Alte cityKey-Werte (z. B. 'freiburg') auf PLZ migrieren
+    if(u.cityKey && !/^\d{5}$/.test(u.cityKey) && u.cityKey !== 'unknown'){
+      if(!u.plz) u.plz = 'unknown';
+      u.cityKey = u.plz;
+      changed = true;
+    }
+    if(!u.plz) u.plz = /^\d{5}$/.test(u.cityKey || '') ? u.cityKey : '';
+    if(typeof u.homeLat === 'undefined') u.homeLat = null;
+    if(typeof u.homeLng === 'undefined') u.homeLng = null;
+  });
+  if(changed) saveUsers(users);
+}
+
 function initApp(){
   renderChips();
+  initRadiusBar();
 
   if(navigator.geolocation && state.user){
     getCurrentPosition().then(pos => {
       saveUserPosition(pos);
+      updateRadiusUI();
       if(state.view === 'map') updateMap();
     }).catch(() => {});
   }
 
-  if(state.user && !state.user.cityKey){
-    const guessedKey = state.user.homeAddress
-      ? normalizeCityKey(state.user.homeAddress)
-      : 'default';
-    updateCurrentUser({
-      city: state.user.city || getCityName(guessedKey),
-      cityKey: guessedKey,
-    });
-  }
-  if(state.user?.cityKey && state.user.cityKey !== 'default'){
-    seedCityDemoUsers();
-    updateVipStatusForCity(state.user.cityKey);
+  const regionKey = getUserRegionKey(state.user);
+  if(state.user && regionKey !== 'unknown'){
+    seedPlzDemoUsers(regionKey, state.user.city || '');
+    updateVipStatusForCity(regionKey);
   }
   runVipCycleIfDue();
 
@@ -3272,7 +3512,7 @@ function init(){
   document.getElementById('menuLogo').addEventListener('click', () => {
     document.getElementById('logoFile').click();
   });
-  document.getElementById('menuCity').addEventListener('click', editCity);
+  document.getElementById('menuCity').addEventListener('click', editLocation);
   document.getElementById('menuHomeAddress').addEventListener('click', editHomeAddress);
   document.getElementById('menuTrustInfo').addEventListener('click', showTrustInfo);
   document.getElementById('menuClear').addEventListener('click', () => {
@@ -3296,12 +3536,14 @@ function init(){
     }catch(err){ toast('Logo konnte nicht geladen werden', true); }
   });
 
+  // User-Migration und Daten laden
+  migrateOldUserData();
+
   if(lsGet(LS_ITEMS, null) === null){
     state.items = seedDemoItems();
   } else {
     state.items = lsGet(LS_ITEMS, []);
   }
-  state.reports = lsGet(LS_REPORTS, []);
   saveAll();
 
   const session = getSession();
