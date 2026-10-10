@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>KISTE – Verschenke & Finde</title>
+
+<!-- ===== Favicons ===== -->
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+<!-- ===== PWA-Manifest ===== -->
+<link rel="manifest" href="site.webmanifest">
+
+<!-- ===== Mobile-Theme ===== -->
+<meta name="theme-color" content="#1f3a2a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KISTE">
+<meta name="mobile-web-app-capable" content="yes">
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
   :root{
@@ -762,9 +778,6 @@
 
   <!-- ============================================
        ENTWICKLER-SPERRE
-       Zum Entfernen: Diesen Block + JS-Funktionen
-       initDevLock()/lockDev() löschen und in init()
-       den Dev-Check auskommentieren.
        ============================================ -->
   <div class="dev-lock" id="devLock">
     <div class="dev-lock-card">
@@ -788,8 +801,8 @@
   <div class="auth-overlay" id="authOverlay">
     <div class="brand">
       <div class="leaf" id="authLogoSlot">
-        <img id="authLogoImg" alt="" style="display:none;">
-        <div class="fallback" id="authLogoFallback">🌱</div>
+        <img id="authLogoImg" src="logo.png" alt="KISTE Logo" style="display:block;width:100%;height:100%;object-fit:cover;">
+        <div class="fallback" id="authLogoFallback" style="display:none;">🌱</div>
       </div>
       <div>
         <h1>KISTE</h1>
@@ -825,8 +838,8 @@
   <header id="appHeader">
     <div class="brand">
       <div class="leaf" id="logoSlot">
-        <img id="logoImg" alt="KISTE Logo" style="display:none;">
-        <div class="fallback" id="logoFallback">🌱</div>
+        <img id="logoImg" src="logo.png" alt="KISTE Logo" style="display:block;width:100%;height:100%;object-fit:cover;">
+        <div class="fallback" id="logoFallback" style="display:none;">🌱</div>
       </div>
       <div>
         <h1>KISTE</h1>
@@ -1070,10 +1083,10 @@
 /* =====================================================
    KISTE – Vollversion
    - Sichtbarkeit fest auf 24 Stunden begrenzt
-   - Region über PLZ (nicht nächste Großstadt)
-   - Radius-Filter 1–25 km für den Feed
+   - Region über PLZ
+   - Radius-Filter 1–25 km
    - Entwickler-Sperre (M47ze / 010155)
-   - Festes App-Logo im Header, Nutzerbild im Profil
+   - Festes App-Logo, Nutzerbild im Profil
    ===================================================== */
 
 const CATEGORIES = {
@@ -1087,7 +1100,6 @@ const CATEGORIES = {
 
 const DEFAULT_LOC = { lat: 47.5533, lng: 7.6667 };
 
-// ===== Limits & Schwellen =====
 const MAX_ITEMS = 5;
 const VISIBILITY_HOURS = 24;
 const VISIBILITY_MS = VISIBILITY_HOURS * 60 * 60 * 1000;
@@ -1211,11 +1223,11 @@ function lockDev(){
 window.lockDev = lockDev;
 
 /* ===== Storage ===== */
-const LS_USERS   = 'kiste.users.v11';
-const LS_SESSION = 'kiste.session.v11';
-const LS_ITEMS   = 'kiste.items.v11';
-const LS_ESCALATIONS = 'kiste.escalations.v11';
-const LS_FLAGGED = 'kiste.flagged.v11';
+const LS_USERS   = 'kiste.users.v12';
+const LS_SESSION = 'kiste.session.v12';
+const LS_ITEMS   = 'kiste.items.v12';
+const LS_ESCALATIONS = 'kiste.escalations.v12';
+const LS_FLAGGED = 'kiste.flagged.v12';
 const LS_LAST_VIP_CALC = 'kiste.vipCalc.v1';
 
 function lsGet(k, def){ try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : def; }catch(e){ return def; } }
@@ -1847,7 +1859,6 @@ function logout(){
   state.user = null;
   state.userLat = null;
   state.userLng = null;
-  // Kisten bleiben erhalten – kein Filtern!
   closeModal();
   renderAll();
   showAuth();
@@ -2005,14 +2016,12 @@ async function checkUserAtOwnHome(pos, item){
   const me = users[state.user.email];
   if(!me) return false;
 
-  // 1) Wenn wir Koordinaten der eigenen Adresse haben: Distanz prüfen
   if(me.homeLat != null && me.homeLng != null){
     const d = distanceMeters(pos.lat, pos.lng, me.homeLat, me.homeLng);
     const boxD = distanceMeters(item.lat, item.lng, me.homeLat, me.homeLng);
     return d <= GPS_HOME_RADIUS_M && boxD <= GPS_HOME_RADIUS_M;
   }
 
-  // 2) Fallback: Adressvergleich (normalisiert)
   if(!me.homeAddress) return false;
   const norm = s => String(s||'').toLowerCase()
     .replace(/[.,]/g, ' ')
@@ -2362,23 +2371,11 @@ function renderBanBanner(){
 }
 
 /* =====================================================
-   APP-LOGO (fest) + PROFILBILD
+   APP-LOGO (fest über logo.png im HTML)
    ===================================================== */
 function renderLogo(){
-  // Feste App-Logos: Header + Auth-Overlay zeigen IMMER 🌱.
-  // Das Nutzer-Profilbild (state.user.logo) wird ausschließlich im
-  // Profil-Avatar und in den Karten-Stamps (giverLogo) verwendet.
-  const img = document.getElementById('logoImg');
-  const fallback = document.getElementById('logoFallback');
-  const authImg = document.getElementById('authLogoImg');
-  const authFallback = document.getElementById('authLogoFallback');
-
-  if(img){ img.removeAttribute('src'); img.style.display = 'none'; }
-  if(fallback) fallback.style.display = 'flex';
-  if(authImg){ authImg.removeAttribute('src'); authImg.style.display = 'none'; }
-  if(authFallback) authFallback.style.display = 'flex';
-
-  // Statusanzeige im Profilmenü aktualisieren
+  // Das feste App-Logo (logo.png) ist im HTML hinterlegt.
+  // Diese Funktion pflegt nur die Statusanzeige im Profilmenü.
   const stateEl = document.getElementById('menuLogoState');
   if(stateEl && state.user){
     stateEl.textContent = state.user.logo ? 'gesetzt' : 'nicht gesetzt';
@@ -2949,7 +2946,7 @@ function renderModerator(){
 }
 
 /* =====================================================
-   KARTE – Leaflet + OpenStreetMap + Radius-Kreis
+   KARTE
    ===================================================== */
 let map = null, markersLayer = null, userMarker = null, radiusCircle = null;
 
@@ -3645,7 +3642,6 @@ function startApp(){
     }
   });
 
-  // Profilbild ändern / entfernen
   document.getElementById('menuLogo').addEventListener('click', () => {
     if(state.user?.logo){
       const entfernen = confirm(
