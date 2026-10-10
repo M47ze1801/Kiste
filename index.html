@@ -88,7 +88,6 @@
   .search input::placeholder{color:var(--bio-muted);}
   .search .icon{color:var(--bio-leaf);font-size:16px;}
 
-  /* ===== Radius-Filter ===== */
   .radius-bar{
     display:flex;align-items:center;gap:12px;
     margin:10px 18px 0;padding:10px 14px;
@@ -715,11 +714,76 @@
     cursor:pointer;white-space:nowrap;font-family:inherit;
   }
   .mod-tab.active{background:var(--mod-blue);color:#fff;border-color:var(--mod-blue);}
+
+  /* ===== Entwickler-Sperre ===== */
+  .dev-lock{
+    position:absolute;inset:0;
+    background:linear-gradient(160deg,#1a261f,#2c3d34);
+    z-index:200;display:none;
+    flex-direction:column;align-items:center;justify-content:center;
+    padding:32px 24px;color:#fff;
+  }
+  .dev-lock.show{display:flex;}
+  .dev-lock-card{
+    width:100%;max-width:340px;background:var(--bio-cream);
+    border-radius:24px;padding:28px 24px;color:var(--bio-text);
+    box-shadow:0 20px 50px rgba(0,0,0,.5);
+    animation:fadeUp .3s ease both;
+  }
+  .dev-lock-icon{
+    width:64px;height:64px;border-radius:50%;
+    background:linear-gradient(140deg,var(--bio-dark),var(--bio-leaf));
+    display:flex;align-items:center;justify-content:center;
+    font-size:30px;margin:0 auto 16px;
+    box-shadow:inset 0 0 0 4px rgba(255,255,255,.25);
+  }
+  .dev-lock-card h2{
+    font-size:20px;font-weight:800;color:var(--bio-dark);
+    text-align:center;margin-bottom:8px;
+  }
+  .dev-lock-card > p{
+    font-size:12.5px;color:var(--bio-muted);text-align:center;
+    margin-bottom:20px;line-height:1.5;
+  }
+  .dev-lock-err{
+    margin-top:12px;text-align:center;font-size:12px;
+    color:var(--bio-danger);font-weight:700;min-height:16px;
+  }
+  .dev-lock-badge{
+    margin-top:18px;font-size:10px;letter-spacing:2px;
+    color:#5a6a5f;text-transform:uppercase;text-align:center;
+    font-weight:700;
+  }
 </style>
 </head>
 <body>
 
 <div class="phone" id="phone">
+
+  <!-- ============================================
+       ENTWICKLER-SPERRE
+       Zum Entfernen: Diesen Block + JS-Funktionen
+       initDevLock()/lockDev() löschen und in init()
+       den Dev-Check auskommentieren.
+       ============================================ -->
+  <div class="dev-lock" id="devLock">
+    <div class="dev-lock-card">
+      <div class="dev-lock-icon">🔒</div>
+      <h2>Entwicklungsmodus</h2>
+      <p>Diese Version ist während der Entwicklung nur für den Entwickler zugänglich.</p>
+      <div class="field">
+        <label>Benutzername</label>
+        <input type="text" id="devUser" autocomplete="username" autocapitalize="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>Passwort</label>
+        <input type="password" id="devPass" autocomplete="current-password">
+      </div>
+      <button class="btn-primary" id="devSubmit">Entsperren</button>
+      <div class="dev-lock-err" id="devErr"></div>
+      <div class="dev-lock-badge">Nichtöffentliche Vorabversion</div>
+    </div>
+  </div>
 
   <div class="auth-overlay" id="authOverlay">
     <div class="brand">
@@ -729,7 +793,7 @@
       </div>
       <div>
         <h1>KISTE</h1>
-        <small>TEILEN · TAUSCHEN · FINDEN</small>
+        <small>TEILEN · FINDEN</small>
       </div>
     </div>
     <h2 id="authTitle">Willkommen zurück</h2>
@@ -766,7 +830,7 @@
       </div>
       <div>
         <h1>KISTE</h1>
-        <small>TEILEN · TAUSCHEN · FINDEN</small>
+        <small>TEILEN · FINDEN</small>
       </div>
     </div>
     <p class="tagline">Verschenke, was du nicht mehr brauchst – finde Schätze in deiner Nachbarschaft.</p>
@@ -958,6 +1022,9 @@
           <div class="menu-item" id="menuLogout">
             <span class="mi">🚪</span> Abmelden <span class="arrow">›</span>
           </div>
+          <div class="menu-item" onclick="lockDev()">
+            <span class="mi">🔒</span> Entwicklermodus sperren <span class="arrow">›</span>
+          </div>
         </div>
 
         <div class="tip" style="margin-top:6px;">
@@ -1000,9 +1067,10 @@
 <script>
 /* =====================================================
    KISTE – Vollversion
-   Sichtbarkeit fest auf 24 Stunden begrenzt.
-   Region über PLZ (nicht nächste Großstadt).
-   Radius-Filter 1–25 km für den Feed.
+   - Sichtbarkeit fest auf 24 Stunden begrenzt
+   - Region über PLZ (nicht nächste Großstadt)
+   - Radius-Filter 1–25 km für den Feed
+   - Entwickler-Sperre (M47ze / 010155)
    ===================================================== */
 
 const CATEGORIES = {
@@ -1074,6 +1142,70 @@ const state = {
   modTab: 'escalations',
   previousView: 'feed',
 };
+
+/* =====================================================
+   ENTWICKLER-SPERRE
+   ===================================================== */
+const DEV_USER = 'M47ze';
+const DEV_PASS = '010155';
+const LS_DEV_UNLOCK = 'kiste.dev.unlocked.v1';
+
+function isDevUnlocked(){
+  return lsGet(LS_DEV_UNLOCK, false) === true;
+}
+
+function showDevLock(){
+  document.getElementById('devLock').classList.add('show');
+}
+function hideDevLock(){
+  document.getElementById('devLock').classList.remove('show');
+}
+
+function initDevLock(){
+  const userInput = document.getElementById('devUser');
+  const passInput = document.getElementById('devPass');
+  const submit = document.getElementById('devSubmit');
+  const err = document.getElementById('devErr');
+
+  let busy = false;
+  async function attempt(){
+    if(busy) return;
+    busy = true;
+    err.textContent = '';
+    const u = userInput.value.trim();
+    const p = passInput.value;
+    if(!u || !p){
+      err.textContent = 'Bitte Benutzername und Passwort eingeben.';
+      busy = false;
+      return;
+    }
+    await new Promise(r => setTimeout(r, 400));
+    if(u === DEV_USER && p === DEV_PASS){
+      lsSet(LS_DEV_UNLOCK, true);
+      hideDevLock();
+      userInput.value = '';
+      passInput.value = '';
+      startApp();
+    } else {
+      err.textContent = 'Falsche Zugangsdaten.';
+      passInput.value = '';
+      passInput.focus();
+    }
+    busy = false;
+  }
+
+  submit.addEventListener('click', attempt);
+  passInput.addEventListener('keydown', e => { if(e.key === 'Enter') attempt(); });
+  userInput.addEventListener('keydown', e => { if(e.key === 'Enter') passInput.focus(); });
+  setTimeout(() => userInput.focus(), 100);
+}
+
+function lockDev(){
+  if(!confirm('Entwicklermodus wieder sperren?')) return;
+  lsSet(LS_DEV_UNLOCK, false);
+  location.reload();
+}
+window.lockDev = lockDev;
 
 /* ===== Storage ===== */
 const LS_USERS   = 'kiste.users.v10';
@@ -1712,7 +1844,7 @@ function logout(){
   state.user = null;
   state.userLat = null;
   state.userLng = null;
-  // WICHTIG: Kisten bleiben erhalten – kein Filtern!
+  // Kisten bleiben erhalten – kein Filtern!
   closeModal();
   renderAll();
   showAuth();
@@ -1887,7 +2019,6 @@ async function checkUserAtOwnHome(pos, item){
   const box = norm(item.address);
   if(!home || !box) return false;
 
-  // Straße + Hausnummer isolieren
   const streetNum = s => {
     const m = s.match(/([a-zäöüß]+(?:str|straße|strasse|weg|platz|gasse|allee|ring|damm)\.?\s*\d+[a-z]?)/);
     return m ? m[1].replace(/\s+/g, '') : null;
@@ -1958,7 +2089,6 @@ function getVisibleItems(){
         + ' ' + it.giver + ' ' + (it.plz||'')).toLowerCase().includes(q);
     });
 
-  // Distanz immer berechnen, wenn Standort bekannt
   visible.forEach(it => {
     if(userPos){
       it._distance = distanceMeters(userPos.lat, userPos.lng, it.lat, it.lng);
@@ -2868,7 +2998,6 @@ function updateMap(){
       <div class="popup-loc">Genauigkeit: ±${Math.round(state.userAccuracy || state.user?.lastAccuracy || 0)} m</div>
     `);
 
-    // Radius-Kreis
     radiusCircle = L.circle([u.lat, u.lng], {
       radius: state.radiusKm * 1000,
       color: '#3f7d4e',
@@ -2939,7 +3068,6 @@ function initRadiusBar(){
       const pos = await getCurrentPosition();
       saveUserPosition(pos);
 
-      // PLZ automatisch nachziehen
       const rev = await reverseGeocode(pos.lat, pos.lng);
       if(rev && rev.postcode){
         const oldPlz = state.user.plz;
@@ -3151,7 +3279,6 @@ async function submitItem(){
     lng = pos.lng;
   }
 
-  // PLZ bestimmen: erst aus Adresse, sonst per Reverse-Geocoding
   let plz = normalizePlz(addr);
   if(plz === 'unknown' && lat != null && lng != null){
     const rev = await reverseGeocode(lat, lng);
@@ -3234,7 +3361,7 @@ const LEGAL_CONTENT = {
     <h3>5. Speicherdauer</h3>
     <p>Kisten und Fotos werden nach <strong>24 Stunden</strong> automatisch gelöscht. Account-Daten werden bis zur Löschung des Kontos gespeichert. GPS-Daten werden nur zur Verifikation und Anzeige verwendet.</p>
     <h3>6. Karten</h3>
-    <p>Zur Darstellung der Karte nutzen wir den Dienst <strong>OpenStreetMap</strong> (OpenStreetMap Foundation, St John's Innovation Centre, Cowley Road, Cambridge, CB4 0WS, United Kingdom). Beim Laden der Karte werden IP-Adresse und Kartenausschnitt an OpenStreetMap übertragen. Zur Umwandlung von Adressen in Koordinaten und PLZ nutzen wir den Dienst <strong>Nominatim</strong>. Weitere Informationen: openstreetmap.org/copyright.</p>
+    <p>Zur Darstellung der Karte nutzen wir den Dienst <strong>OpenStreetMap</strong>. Zur Umwandlung von Adressen in Koordinaten und PLZ nutzen wir den Dienst <strong>Nominatim</strong>. Weitere Informationen: openstreetmap.org/copyright.</p>
     <h3>7. Weitergabe</h3>
     <p>Hosting-Dienstleister, Zahlungsdienstleister (Play Store), OpenStreetMap.</p>
     <h3>8. Ihre Rechte</h3>
@@ -3339,7 +3466,6 @@ function renderAll(){
 
 function cleanupExpired(){
   const before = state.items.length;
-  // Auch eigene Kisten werden nach 24h entfernt – keine Ausnahme.
   state.items = state.items.filter(it => !isExpired(it));
   if(state.items.length !== before){
     saveAll();
@@ -3414,7 +3540,6 @@ function migrateOldUserData(){
   const users = getUsers();
   let changed = false;
   Object.values(users).forEach(u => {
-    // Alte cityKey-Werte (z. B. 'freiburg') auf PLZ migrieren
     if(u.cityKey && !/^\d{5}$/.test(u.cityKey) && u.cityKey !== 'unknown'){
       if(!u.plz) u.plz = 'unknown';
       u.cityKey = u.plz;
@@ -3472,7 +3597,7 @@ function updateModeratorNav(){
   }
 }
 
-function init(){
+function startApp(){
   initForm();
 
   document.querySelectorAll('.nav-item').forEach(n => {
@@ -3536,7 +3661,6 @@ function init(){
     }catch(err){ toast('Logo konnte nicht geladen werden', true); }
   });
 
-  // User-Migration und Daten laden
   migrateOldUserData();
 
   if(lsGet(LS_ITEMS, null) === null){
@@ -3563,6 +3687,15 @@ function init(){
     }
   }
   showAuth();
+}
+
+function init(){
+  initDevLock();
+  if(isDevUnlocked()){
+    startApp();
+  } else {
+    showDevLock();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
