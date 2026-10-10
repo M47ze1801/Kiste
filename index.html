@@ -982,7 +982,9 @@
             <span class="mi">👤</span> Namen ändern <span class="arrow">›</span>
           </div>
           <div class="menu-item" id="menuLogo">
-            <span class="mi">🖼️</span> Logo ändern <span class="arrow">›</span>
+            <span class="mi">🖼️</span> <span style="flex:1;">Profilbild ändern</span>
+            <span id="menuLogoState" style="font-size:11px;color:var(--bio-muted);"></span>
+            <span class="arrow">›</span>
           </div>
           <div class="menu-item" id="menuCity">
             <span class="mi">📮</span> <span style="flex:1;">PLZ / Ort ändern</span>
@@ -1031,7 +1033,7 @@
           <span>💚</span>
           <div>
             <strong>Danke, dass du teilst!</strong>
-            Jede geteilte Kiste spart Ressourcen und Freude.
+            Jede geteilte Kiste spart Ressourcen und bringt Freude.
           </div>
         </div>
       </div>
@@ -1071,6 +1073,7 @@
    - Region über PLZ (nicht nächste Großstadt)
    - Radius-Filter 1–25 km für den Feed
    - Entwickler-Sperre (M47ze / 010155)
+   - Festes App-Logo im Header, Nutzerbild im Profil
    ===================================================== */
 
 const CATEGORIES = {
@@ -1208,11 +1211,11 @@ function lockDev(){
 window.lockDev = lockDev;
 
 /* ===== Storage ===== */
-const LS_USERS   = 'kiste.users.v10';
-const LS_SESSION = 'kiste.session.v10';
-const LS_ITEMS   = 'kiste.items.v10';
-const LS_ESCALATIONS = 'kiste.escalations.v10';
-const LS_FLAGGED = 'kiste.flagged.v10';
+const LS_USERS   = 'kiste.users.v11';
+const LS_SESSION = 'kiste.session.v11';
+const LS_ITEMS   = 'kiste.items.v11';
+const LS_ESCALATIONS = 'kiste.escalations.v11';
+const LS_FLAGGED = 'kiste.flagged.v11';
 const LS_LAST_VIP_CALC = 'kiste.vipCalc.v1';
 
 function lsGet(k, def){ try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : def; }catch(e){ return def; } }
@@ -2359,20 +2362,27 @@ function renderBanBanner(){
 }
 
 /* =====================================================
-   LOGO
+   APP-LOGO (fest) + PROFILBILD
    ===================================================== */
 function renderLogo(){
+  // Feste App-Logos: Header + Auth-Overlay zeigen IMMER 🌱.
+  // Das Nutzer-Profilbild (state.user.logo) wird ausschließlich im
+  // Profil-Avatar und in den Karten-Stamps (giverLogo) verwendet.
   const img = document.getElementById('logoImg');
   const fallback = document.getElementById('logoFallback');
   const authImg = document.getElementById('authLogoImg');
   const authFallback = document.getElementById('authLogoFallback');
-  const src = state.user && state.user.logo ? state.user.logo : null;
-  [img, authImg].forEach((el, i) => {
-    const fb = i === 0 ? fallback : authFallback;
-    if(!el) return;
-    if(src){ el.src = src; el.style.display = 'block'; fb.style.display = 'none'; }
-    else { el.removeAttribute('src'); el.style.display = 'none'; fb.style.display = 'flex'; }
-  });
+
+  if(img){ img.removeAttribute('src'); img.style.display = 'none'; }
+  if(fallback) fallback.style.display = 'flex';
+  if(authImg){ authImg.removeAttribute('src'); authImg.style.display = 'none'; }
+  if(authFallback) authFallback.style.display = 'flex';
+
+  // Statusanzeige im Profilmenü aktualisieren
+  const stateEl = document.getElementById('menuLogoState');
+  if(stateEl && state.user){
+    stateEl.textContent = state.user.logo ? 'gesetzt' : 'nicht gesetzt';
+  }
 }
 
 /* =====================================================
@@ -3634,9 +3644,25 @@ function startApp(){
       toast('Name aktualisiert');
     }
   });
+
+  // Profilbild ändern / entfernen
   document.getElementById('menuLogo').addEventListener('click', () => {
+    if(state.user?.logo){
+      const entfernen = confirm(
+        'Profilbild löschen?\n\n' +
+        'OK  = aktuelles Bild entfernen\n' +
+        'Abbrechen = neues Bild auswählen'
+      );
+      if(entfernen){
+        updateCurrentUser({ logo: null });
+        renderAll();
+        toast('Profilbild entfernt');
+        return;
+      }
+    }
     document.getElementById('logoFile').click();
   });
+
   document.getElementById('menuCity').addEventListener('click', editLocation);
   document.getElementById('menuHomeAddress').addEventListener('click', editHomeAddress);
   document.getElementById('menuTrustInfo').addEventListener('click', showTrustInfo);
@@ -3657,8 +3683,8 @@ function startApp(){
       const dataUrl = await compressLogo(file, 256);
       updateCurrentUser({ logo: dataUrl });
       renderAll();
-      toast('Logo gespeichert ✨');
-    }catch(err){ toast('Logo konnte nicht geladen werden', true); }
+      toast('Profilbild gespeichert ✨');
+    }catch(err){ toast('Profilbild konnte nicht geladen werden', true); }
   });
 
   migrateOldUserData();
